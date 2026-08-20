@@ -1,0 +1,107 @@
+services:
+  # database:
+  #   image: postgres:16-alpine
+  #   container_name: tictactoe-database
+  #   restart: unless-stopped
+  #   environment:
+  #     POSTGRES_DB: ${POSTGRES_DB}
+  #     POSTGRES_USER: ${POSTGRES_USER}
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   healthcheck:
+  #     test:
+  #       [
+  #         "CMD-SHELL",
+  #         "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"
+  #       ]
+  #     interval: 5s
+  #     timeout: 5s
+  #     retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    container_name: bombermann-backend
+    restart: unless-stopped
+    environment:
+      PORT: ${BACKEND_PORT}
+      FRONTEND_URL: http://localhost:${FRONTEND_PORT}
+      DB_HOST: database
+      DB_PORT: 5432
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: ${POSTGRES_DB}
+      SESSION_SECRET: ${SESSION_SECRET}
+    ports:
+      - "${BACKEND_PORT}:3001"
+    volumes:
+      - ./backend:/app/backend
+      - ./utils:/app/utils
+      - /app/node_modules
+    # depends_on:
+      # database:
+      #   condition: service_healthy
+    command: npm run dev
+
+  backend-test:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    container_name: bombermann-backend-test
+    restart: unless-stopped
+    environment:
+      DB_HOST: database
+      DB_PORT: 5432
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: ${POSTGRES_DB}
+      SESSION_SECRET: ${SESSION_SECRET}
+    volumes:
+      - ./backend:/app/backend
+      - ./utils:/app/utils
+      - /app/node_modules
+    # depends_on:
+      # database:
+      #   condition: service_healthy
+    command: npm run test:watch
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: bombermann-frontend
+    restart: unless-stopped
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+    ports:
+      - "${FRONTEND_PORT}:5173"
+    volumes:
+      - ./frontend:/app/frontend
+      - ./utils:/app/utils
+      - /app/node_modules
+    # depends_on:
+    #   - backend
+    command: npm run dev -- --host 0.0.0.0
+
+  frontend-test:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: bombermann-frontend-test
+    restart: unless-stopped
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ./frontend:/app/frontend
+      - ./utils:/app/utils
+      - /app/node_modules
+    # depends_on:
+    #   - backend
+    command: npm run test:watch
+
+volumes:
+  postgres_data:
