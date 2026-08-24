@@ -4,10 +4,14 @@ import Vector from "../utils/Vector";
 export default abstract class Moveable {
     private position: Vector;
     private velocity: Vector;
+    private height: number;
+    private width: number;
 
-    constructor(startPosition: Vector, height: number, weight: number) {
+    constructor(startPosition: Vector, height: number, width: number) {
         this.position = startPosition;
         this.velocity = new Vector(0, 0);
+        this.height = height;
+        this.width = width;
     }
 
     public getPosition(): Vector {
@@ -15,7 +19,7 @@ export default abstract class Moveable {
     }
 
     public getBox() {
-        return new BoundingBox(this.position, 4, 4);
+        return new BoundingBox(this.position, this.height, this.width);
     }
 
     public setVelocity(vector: Vector) {
