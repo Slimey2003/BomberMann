@@ -1,3 +1,4 @@
+import BoundingBox from "../utils/BoundingBox";
 import DelayQueue from "../utils/DelayedQueue";
 import Effect from "../utils/Effect";
 import type Vector from "../utils/Vector";
@@ -11,7 +12,7 @@ export default class Player extends Moveable {
     private placedBombs: DelayQueue<Bomb> = new DelayQueue();
 
     constructor(id: number, name: string, startPosition: Vector) {
-        super(startPosition);
+        super(startPosition, 10, 5); //10 für die Höhe und 5 für die Breite
         this.id = id;
         this.name = name;
     }
