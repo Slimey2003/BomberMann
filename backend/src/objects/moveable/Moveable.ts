@@ -26,8 +26,8 @@ export default abstract class Moveable {
         this.velocity = vector;
     }
 
-    public getMovement(gameTime: number) {
-        return this.velocity.scale(gameTime);
+    public getMovement(gameTime?: number) {
+        return gameTime ? this.velocity.scale(gameTime) : this.velocity.getCopy();
     }
 
     public updateMove(movement: Vector) {

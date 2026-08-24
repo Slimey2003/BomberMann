@@ -1,4 +1,3 @@
-import BoundingBox from "../utils/BoundingBox";
 import DelayQueue from "../utils/DelayedQueue";
 import Effect from "../effect/Effect";
 import type Vector from "../utils/Vector";
@@ -8,13 +7,15 @@ import Moveable from "./Moveable";
 export default class Player extends Moveable {
     private id: number;
     private name: string;
+    private lives: number;
     private effects: Effect[] = [];
     private placedBombs: DelayQueue<Bomb> = new DelayQueue();
 
-    constructor(id: number, name: string, startPosition: Vector) {
+    constructor(id: number, lives: number, name: string, startPosition: Vector) {
         super(startPosition, 10, 5); //10 für die Höhe und 5 für die Breite
         this.id = id;
         this.name = name;
+        this.lives = lives;
     }
 
     public getId() {
@@ -23,6 +24,19 @@ export default class Player extends Moveable {
 
     public getName() {
         return this.name;
+    }
+
+    public getBombs(): Bomb[] {
+        return this.placedBombs.getValues();
+    }
+
+    public lostLive() {
+        if (this.lives <= 0) return;
+        this.lives--;
+    }
+
+    public isDead() {
+        return this.lives <= 0;
     }
 
     public addEffectOrChange(effectId: number) {

@@ -9,6 +9,10 @@ export default class DelayQueue<T extends Delayed> {
         this.elements = [];
     }
 
+    public getValues(): T[] {
+        return [...this.elements];
+    }
+
     public put(element: T): void {
         this.elements.push(element);
         this.elements.sort((a, b) => a.getDelay() - b.getDelay());
@@ -23,4 +27,6 @@ export default class DelayQueue<T extends Delayed> {
             return this.elements.shift();
         }
     }
+
+
 }
