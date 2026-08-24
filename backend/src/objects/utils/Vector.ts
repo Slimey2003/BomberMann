@@ -22,6 +22,14 @@ export default class Vector {
         return this.y;
     }
 
+    public isVector(x: number, y: number) {
+        return this.x == x && this.y == y; 
+    }
+
+    public equals(vector: Vector) {
+        return vector.x == this.x && vector.y == this.y;
+    }
+
     public add(vector: Vector): Vector {
         return new Vector(vector.x + this.x, vector.y + this.y);
     }

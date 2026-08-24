@@ -10,24 +10,16 @@ export default class BoundingBox {
     private height: number;
     private weight: number;
 
-    constructor(center: Vector, height: number, weight: number) {
+    constructor(center: Vector, height: number, width: number) {
         const halfHeight = height / 2;
-        const halfWeight = weight / 2;
+        const halfWidth = width / 2;
         this.height = halfHeight;
-        this.weight = halfWeight;
-        this.minX = center.getX() - halfWeight;
-        this.maxX = center.getX() + halfWeight;
+        this.weight = halfWidth;
+        this.minX = center.getX() - halfWidth;
+        this.maxX = center.getX() + halfWidth;
 
         this.minY = center.getY() - halfHeight;
         this.maxY = center.getY() + halfHeight;
-    }
-
-    public changePosition(center: Vector) {
-        this.minX = center.getX() - this.weight;
-        this.maxX = center.getX() + this.weight;
-
-        this.minY = center.getY() - this.height;
-        this.maxY = center.getY() + this.height;
     }
 
     public getMinX() {
@@ -51,6 +43,13 @@ export default class BoundingBox {
                vector.getX() <= this.maxX &&
                vector.getY() >= this.minY &&
                vector.getY() <= this.maxY;
+    }
+
+    public overlabs(box: BoundingBox) {
+        return box.getMinX() >= this.minX &&
+               box.getMaxX() <= this.maxX &&
+               box.getMinY() >= this.minY &&
+               box.getMaxY() <= this.maxY;
     }
 
     /**

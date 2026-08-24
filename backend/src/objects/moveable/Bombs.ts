@@ -17,6 +17,14 @@ export default class Bomb extends Moveable implements Delayed {
         return this.placeTime;
     }
 
+    public getRange() {
+        return this.expositionRange;
+    }
+
+    public getStrange() {
+        return this.expositionStrange;
+    }
+
     public addRange(range: number): Bomb {
         this.expositionRange += range;
         return this;

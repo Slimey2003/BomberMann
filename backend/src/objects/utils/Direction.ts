@@ -18,7 +18,7 @@ export class Direction {
         Object.freeze(this);
     }
 
-    static fromKey(key: string): Direction | undefined {
+    public static fromKey(key: string): Direction | undefined {
         switch (key.toLowerCase()) {
             case "w":
             case "W":
@@ -53,6 +53,10 @@ export class Direction {
 
     public getVector() {
         return new Vector(this.dx, this.dy);
+    }
+
+    public static values(): Direction[] {
+        return [Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST];
     }
 
     public toString(): string {
