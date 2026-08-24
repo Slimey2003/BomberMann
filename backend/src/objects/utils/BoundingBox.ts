@@ -7,14 +7,9 @@ export default class BoundingBox {
     private maxX: number;
     private maxY: number;
 
-    private height: number;
-    private weight: number;
-
     constructor(center: Vector, height: number, width: number) {
         const halfHeight = height / 2;
         const halfWidth = width / 2;
-        this.height = halfHeight;
-        this.weight = halfWidth;
         this.minX = center.getX() - halfWidth;
         this.maxX = center.getX() + halfWidth;
 
