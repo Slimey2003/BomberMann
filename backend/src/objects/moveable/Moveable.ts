@@ -4,12 +4,10 @@ import Vector from "../utils/Vector";
 export default abstract class Moveable {
     private position: Vector;
     private velocity: Vector;
-    private box: BoundingBox;
 
     constructor(startPosition: Vector, height: number, weight: number) {
         this.position = startPosition;
         this.velocity = new Vector(0, 0);
-        this.box = new BoundingBox(this.position, height, weight);
     }
 
     public getPosition(): Vector {
@@ -17,7 +15,7 @@ export default abstract class Moveable {
     }
 
     public getBox() {
-        return this.box;
+        return new BoundingBox(this.position, 4, 4);
     }
 
     public setVelocity(vector: Vector) {
@@ -30,6 +28,5 @@ export default abstract class Moveable {
 
     public updateMove(movement: Vector) {
         this.position = this.position.add(movement);
-        this.box.changePosition(this.position);
     }
 }

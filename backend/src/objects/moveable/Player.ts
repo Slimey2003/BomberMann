@@ -1,6 +1,6 @@
 import BoundingBox from "../utils/BoundingBox";
 import DelayQueue from "../utils/DelayedQueue";
-import Effect from "../utils/Effect";
+import Effect from "../effect/Effect";
 import type Vector from "../utils/Vector";
 import Bomb from "./Bombs";
 import Moveable from "./Moveable";

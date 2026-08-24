@@ -1,5 +1,5 @@
-import Effect from "../utils/Effect";
-import { getRandomInt } from "../utils/Util";
+import Effect from "../effect/Effect";
+import { getRandomInt } from "../../Util";
 import type Vector from "../utils/Vector";
 import Wall from "./Wall";
 
@@ -8,25 +8,25 @@ export default class BreakableWall extends Wall {
     private damage: number = 0; 
     private effect: Effect | undefined;
 
-    constructor(position: Vector) {
-        super(position);
+    constructor(id: string ,position: Vector) {
+        super(id, position);
         this.resistance = getRandomInt(0, 3);
-        this.effect = Effect.getEffectById(getRandomInt(0, 4));
+        this.effect = Effect.getEffectById(getRandomInt(0, 6));
     }
 
-    public getEffect() {
+    public getEffect(): Effect | undefined {
         return this.effect;
     }
 
-    public getResistance() {
+    public getResistance(): number {
         return this.resistance;
     }
 
-    public addDamage(bombStrange: number) {
+    public addDamage(bombStrange: number): void {
         this.damage += bombStrange;
     }
 
-    public destroyed() {
+    public isDestroyed(): boolean {
         return this.damage >= this.resistance;
     }
 }
