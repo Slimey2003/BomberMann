@@ -22,4 +22,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-backend/src/objects/utils/BoundingBox.ts

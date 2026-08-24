@@ -9,7 +9,7 @@ export default class Bomb extends Moveable implements Delayed {
     private expositionStrange: number = 1;
 
     constructor(startPosition: Vector) {
-        super(startPosition);
+        super(startPosition, 4, 4); //4 für die Breite und Höhe
         this.placeTime = Date.now();
     }
 
