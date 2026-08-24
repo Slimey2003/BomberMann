@@ -39,12 +39,12 @@ export default class BoundingBox {
                vector.getY() >= this.minY &&
                vector.getY() <= this.maxY;
     }
-
-    public overlabs(box: BoundingBox) {
-        return box.getMinX() >= this.minX &&
-               box.getMaxX() <= this.maxX &&
-               box.getMinY() >= this.minY &&
-               box.getMaxY() <= this.maxY;
+    
+    public overlaps(box: BoundingBox): boolean {
+        return this.minX <= box.getMaxX() &&
+               this.maxX >= box.getMinX() &&
+               this.minY <= box.getMaxY() &&
+               this.maxY >= box.getMinY();
     }
 
     /**

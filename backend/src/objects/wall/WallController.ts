@@ -4,8 +4,9 @@ import type Effect from "../effect/Effect";
 import Vector from "../utils/Vector";
 import BreakableWall from "./BreakableWall";
 import Wall from "./Wall";
+import type BoundingBox from "../utils/BoundingBox";
 
-export default class WallManager {
+export default class WallController {
     private height: number;
     private width: number;
     private blockProbability: number;
@@ -22,6 +23,15 @@ export default class WallManager {
 
     public getWalls() {
         return this.walls;
+    }
+
+    public overlapsObjectWithWall(box: BoundingBox): boolean {
+        for (const wall of this.walls.values()) {
+            if (wall.getBox().overlaps(box)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public expositionOnVector(bomb: Bomb, vec: Vector): Effect | undefined {
