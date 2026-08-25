@@ -25,13 +25,12 @@ export default class WallController {
         return this.walls;
     }
 
-    public overlapsObjectWithWall(box: BoundingBox): boolean {
+    public getWallInVectorDirection(start: Vector, end: Vector): Wall | undefined {
         for (const wall of this.walls.values()) {
-            if (wall.getBox().overlaps(box)) {
-                return true;
+            if (wall.getBox().intersects(start, end)) {
+                return wall;
             }
         }
-        return false;
     }
 
     public expositionOnVector(bomb: Bomb, vec: Vector): Effect | undefined {
@@ -47,11 +46,11 @@ export default class WallController {
         return undefined;
     }
 
-    public getExpositionRange(bomb: Bomb): Array<Vector | undefined> {
+    public getExpositionRange(bomb: Bomb): Vector[] {
         return Direction.values().map(dir => this.calculateRange(bomb.getPosition(), bomb.getRange(), dir));
     }
 
-    public calculateRange(pos: Vector, range: number, dir: Direction): Vector | undefined {
+    public calculateRange(pos: Vector, range: number, dir: Direction): Vector {
         const rangeVectors: Vector[] = [];
         for (let i = 1; i <= range; i++) {
             switch (dir) {
@@ -69,7 +68,7 @@ export default class WallController {
                     break;
             }
         }
-        let vecRange: Vector | undefined = undefined;
+        let vecRange: Vector = new Vector(0, 0);
         for (const vec of rangeVectors) {
             const wall =  this.walls.get(vec);
             if (!wall) {

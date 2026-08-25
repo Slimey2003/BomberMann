@@ -1,7 +1,5 @@
-import DelayQueue from "../utils/DelayedQueue";
 import Effect from "../effect/Effect";
 import type Vector from "../utils/Vector";
-import Bomb from "./Bombs";
 import Moveable from "./Moveable";
 
 export default class Player extends Moveable {
@@ -9,7 +7,6 @@ export default class Player extends Moveable {
     private name: string;
     private lives: number;
     private effects: Effect[] = [];
-    private placedBombs: DelayQueue<Bomb> = new DelayQueue();
 
     constructor(id: number, lives: number, name: string, startPosition: Vector) {
         super(startPosition, 10, 5); //10 für die Höhe und 5 für die Breite
@@ -24,10 +21,6 @@ export default class Player extends Moveable {
 
     public getName() {
         return this.name;
-    }
-
-    public getBombs(): Bomb[] {
-        return this.placedBombs.getValues();
     }
 
     public lostLive() {
@@ -70,23 +63,4 @@ export default class Player extends Moveable {
         }
     }
 
-    public placeBomb() {
-        const newBomb = new Bomb(this.getPosition());
-        this.placedBombs.put(newBomb);
-    }
-
-    public pickBomb(): Bomb | undefined {
-        const bomb = this.placedBombs.poll();
-        if (!bomb) return undefined;
-        const effRange = this.getEffect(Effect.RANGE);
-        const effStrange = this.getEffect(Effect.STRANGE);
-        if (effRange) {
-            bomb.addRange(effRange.getScale());
-        }
-        if (effStrange) {
-            bomb.addRange(effStrange.getScale());
-        }
-
-        return bomb;
-    }
 }

@@ -1,13 +1,16 @@
 import Vector from "../utils/Vector";
-import Bomb from "./Bombs";
+import type Wall from "../wall/Wall";
+import type WallController from "../wall/WallController";
 import Player from "./Player";
 
 export default class PlayerController {
     private players: Player[];
+    private wallController: WallController;
 
 
-    constructor(playerNames: string[], lives: number, height: number, width: number) {
+    constructor(wallController: WallController, playerNames: string[], lives: number, height: number, width: number) {
         this.players = [];
+        this.wallController = wallController;
         this.genPlayer(playerNames, lives, height, width);
     }
 
@@ -22,14 +25,13 @@ export default class PlayerController {
         }
     }
 
-    public placeBomb(playerId: number) {
-        const playerBox = this.players[playerId].getBox();
-        for (const bomb of this.getBombs()) {
-            if (playerBox.overlaps(bomb.getBox())) {
-                return;
-            }
+    public updateMovement() {
+        for (const player of this.players) {
+            if (player.getMovement().equals(Vector.nullVector)) continue;
+            const endVector = player.getPosition().add(player.getMovement());
+            const wall: Wall | undefined = this.wallController.getWallInVectorDirection(player.getPosition(), endVector);
+            player.updateMove(wall);
         }
-        this.players[playerId].placeBomb();
     }
 
     public addEffectOrChangeToPlayer(playerId: number, effectId: number) {
@@ -47,36 +49,7 @@ export default class PlayerController {
         }
     }
 
-    public playerCollidedWithBomb() {
-        for (const player of this.players) {
-            for (const bomb of this.getBombs()) {
-                if (player.getBox().overlaps(bomb.getBox())) {
-                    bomb.setVelocity(player.getMovement().scale(20));
-                    break;
-                }
-            }
-        }
-    }
-
-    public pickBomb(): Bomb[] {
-        const pickBomb: Bomb[] = [];
-        for (const player of this.players) {
-            const bomb: Bomb | undefined = player.pickBomb();
-            if (!bomb) continue;
-            pickBomb.push(bomb);
-        }
-        return pickBomb;
-    }
-
     public getPlayers(): Player[] {
         return this.players;
-    }
-
-    public getBombs(): Bomb[] {
-        const bombs: Bomb[] = [];
-        for (const player of this.players) {
-            bombs.push(...player.getBombs());
-        }
-        return bombs;
     }
 }

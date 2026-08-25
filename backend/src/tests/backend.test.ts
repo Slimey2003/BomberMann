@@ -25,7 +25,6 @@ describe("Player", () => {
         it.todo("Can used it", () => {});
     })
     it.todo("Lost Life", () => {});
-    it.todo("Effects", () => {});
     it.todo("Dead", () => {});
 });
 
@@ -37,7 +36,6 @@ describe("BOM", () => {
     it.todo("Movement", () => {});
     describe("Collision", () => {
         it.todo("Collision with Wall", () => {});
-        it.todo("Collision with Player", () => {});
         it.todo("Collision with BOM", () => {});
     })
     describe("Effects", () => {
