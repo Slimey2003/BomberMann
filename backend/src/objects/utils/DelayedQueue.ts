@@ -18,6 +18,10 @@ export default class DelayQueue<T extends Delayed> {
         this.elements.sort((a, b) => a.getDelay() - b.getDelay());
     }
 
+    public delete(element: T) {
+        this.elements = this.elements.filter(e => e !== element);
+    }
+
     public poll(): T | undefined {
         if (this.elements.length === 0) {
             return undefined;
@@ -27,6 +31,4 @@ export default class DelayQueue<T extends Delayed> {
             return this.elements.shift();
         }
     }
-
-
 }

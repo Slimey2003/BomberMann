@@ -1,4 +1,5 @@
 export default class Vector {
+    public static nullVector = new Vector(0, 0); 
     private x;
     private y;
 
