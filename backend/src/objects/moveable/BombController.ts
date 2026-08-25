@@ -19,9 +19,13 @@ export default class BombController {
     public updateMovement() {
         for (const bomb of this.placedBombs.getValues()) {
             if (bomb.getMovement().equals(Vector.nullVector)) continue;
-            const endVector = bomb.getPosition().add(bomb.getMovement());
-            const wall: Wall | undefined = this.wallController.getWallInVectorDirection(bomb.getPosition(), endVector);
+            const futureVector = bomb.getPosition().add(bomb.getMovement());
+            let wall: Wall | undefined = this.wallController.getWallInVectorDirection(bomb.getPosition(), futureVector);
+            if (!wall) {
+                wall = this.wallController.overlapsMoveableWithWall(bomb.getMovedBox());
+            }
             bomb.updateMove(wall);
+            bomb.setVelocity(Vector.nullVector);
         }
     }
 
@@ -33,7 +37,13 @@ export default class BombController {
                 return;
             }
         }
-        const newBomb = new Bomb(player.getId(), player.getPosition());
+
+        const playerPos = player.getPosition();
+        const gridSize = 10; 
+        const centerX = Math.round(playerPos.getX() / gridSize) * gridSize;
+        const centerY = Math.round(playerPos.getY() / gridSize) * gridSize;
+        const centerFieldPos = new Vector(centerX, centerY);
+        const newBomb = new Bomb(player.getId(), centerFieldPos);
         this.placedBombs.put(newBomb);
     }
     
@@ -58,7 +68,7 @@ export default class BombController {
 
             for (const bomb of this.placedBombs.getValues()) {
                 for (const vec of trigger.getCalculatedRange()) {
-                    if (bomb.getBox().intersects(trigger.getPosition(), vec)) {
+                    if (bomb.getBox().intersects(trigger.getPosition(), vec) != null) {
                         this.modifyBomb(bomb);
 
                         this.placedBombs.delete(bomb);
@@ -71,10 +81,11 @@ export default class BombController {
         } while (triggers.length !== 0);
     }
     
-    public playerCollidedWithBomb() {
+    public playerCollidedWithBomb(withoutProtectionTime: boolean) { //withoutProtectionTime is for Testing because tests can not wait a specific time
         for (const player of this.playerController.getPlayers()) {
             for (const bomb of this.getBombs()) {
                 if (player.getBox().overlaps(bomb.getBox())) {
+                    if (!withoutProtectionTime && bomb.noCollision()) continue;
                     bomb.setVelocity(player.getMovement().scale(20));
                     break;
                 }

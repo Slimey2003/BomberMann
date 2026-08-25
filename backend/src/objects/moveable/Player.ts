@@ -9,7 +9,7 @@ export default class Player extends Moveable {
     private effects: Effect[] = [];
 
     constructor(id: number, lives: number, name: string, startPosition: Vector) {
-        super(startPosition, 10, 5); //10 für die Höhe und 5 für die Breite
+        super(startPosition, 5, 5); //5 für die Höhe und 5 für die Breite
         this.id = id;
         this.name = name;
         this.lives = lives;

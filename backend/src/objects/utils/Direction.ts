@@ -5,6 +5,7 @@ export class Direction {
     static EAST = new Direction("EAST", 1, 0);
     static SOUTH = new Direction("SOUTH", 0, 1);
     static WEST = new Direction("WEST", -1, 0);
+    static NONE = new Direction("NONE", 0, 0);
 
 
     private name: string;
@@ -40,6 +41,7 @@ export class Direction {
             case "arrowleft":
                 return Direction.WEST;
         }
+        return Direction.NONE;
     }
 
     public opposite(): Direction | undefined {
