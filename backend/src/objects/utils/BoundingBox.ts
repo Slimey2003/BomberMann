@@ -7,7 +7,12 @@ export default class BoundingBox {
     private maxX: number;
     private maxY: number;
 
+    private height: number;
+    private width: number;
+
     constructor(center: Vector, height: number, width: number) {
+        this.height = height;
+        this.width = width;
         const halfHeight = height / 2;
         const halfWidth = width / 2;
         this.minX = center.getX() - halfWidth;
@@ -15,6 +20,22 @@ export default class BoundingBox {
 
         this.minY = center.getY() - halfHeight;
         this.maxY = center.getY() + halfHeight;
+    }
+
+    public getHeight() {
+        return this.height;
+    }
+
+    public getWidth() {
+        return this.width;
+    }
+
+    public centerX() {
+        return this.getMinX() + (this.width / 2);
+    }
+
+    public centerY() {
+        return this.getMinY() + (this.height / 2);
     }
 
     public getMinX() {
@@ -50,9 +71,9 @@ export default class BoundingBox {
     /**
      * Use Liang-Barsky-Algorithmus
      */
-    public intersects(start: Vector, end: Vector): boolean {
+    public intersects(start: Vector, end: Vector): number | null {
         if (this.contains(start) || this.contains(end)) {
-            return true;
+            return 0.0;
         }
 
         const dx = end.getX() - start.getX();
@@ -71,7 +92,7 @@ export default class BoundingBox {
 
         for (let i = 0; i < 4; i++) {
             if (p[i] === 0 && q[i] < 0) {
-                return false;
+                return null;
             }
             if (p[i] !== 0) {
                 const r = q[i] / p[i];
@@ -82,7 +103,10 @@ export default class BoundingBox {
                 }
             }
         }
+        if (tMin <= tMax && tMax >= 0 && tMin <= 1.0) {
+            return tMin;
+        }
 
-        return tMin <= tMax;
+        return null;
     }
 }

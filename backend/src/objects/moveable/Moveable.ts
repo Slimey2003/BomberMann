@@ -19,11 +19,11 @@ export default abstract class Moveable {
         return this.position.getCopy();
     }
 
-    public getBox() {
+    public getBox(): BoundingBox {
         return new BoundingBox(this.position, this.height, this.width);
     }
 
-    public getMovedBox() {
+    public getMovedBox(): BoundingBox {
         const movement = this.getMovement();
         const movedPos = this.position.add(movement);
 
@@ -34,43 +34,48 @@ export default abstract class Moveable {
         this.velocity = vector;
     }
 
-    public getMovement() {
+    public getMovement(): Vector {
         return this.velocity.getCopy();
     }
 
     public updateMove(wall: Wall | undefined) {
         if (!wall) {
-            this.position.add(this.velocity);
+            this.position = this.position.add(this.velocity);
             return;
         }
         const backVector = this.getCollisionResolutionVector(wall.getBox());
-        if (backVector == null) {
-            this.position.add(this.velocity);
+        if (!backVector) {
+            this.position = this.position.add(this.velocity);
             return;
         }
-        this.position.add(this.velocity.add(backVector));
+        this.position = this.position.add(this.velocity).add(backVector);
     }
 
     public getCollisionResolutionVector(obstacle: BoundingBox): Vector | null {
-        const box = this.getBox();
+        const currentPos = this.getPosition();
+        const futurePos = currentPos.add(this.velocity);
+
+
+        const box = new BoundingBox(futurePos, this.height, this.width);
 
         if (!box.overlaps(obstacle)) {
             return null;
         }
 
-        const overlapX = Math.min(box.getMaxX(), obstacle.getMaxX()) - Math.max(box.getMinX(), obstacle.getMinX());
-        const overlapY = Math.min(box.getMaxY(), obstacle.getMaxY()) - Math.max(box.getMinY(), obstacle.getMinY());
+        const expandedObstacle = new BoundingBox(
+            new Vector(obstacle.centerX(), obstacle.centerY()),
+            obstacle.getHeight() + this.height,
+            obstacle.getWidth() + this.width
+        );
 
-        if (overlapX < overlapY) {
-            const obstacleCenterX = (obstacle.getMinX() + obstacle.getMaxX()) / 2;
-            const pushX = this.position.getX() < obstacleCenterX ? -overlapX : overlapX;
-            
-            return new Vector(pushX, 0);
-        }
-
-        const obstacleCenterY = (obstacle.getMinY() + obstacle.getMaxY()) / 2;
-        const pushY = this.position.getY() < obstacleCenterY ? -overlapY : overlapY;
         
-        return new Vector(0, pushY);
+        const hitTime = expandedObstacle.intersects(currentPos, futurePos);
+
+        if (hitTime === null) {
+            return null;
+        }
+        const safeMove: Vector = this.velocity.scale(hitTime);
+        
+        return safeMove.subtract(this.velocity);
     }
 }

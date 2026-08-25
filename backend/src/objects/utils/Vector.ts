@@ -32,11 +32,11 @@ export default class Vector {
     }
 
     public add(vector: Vector): Vector {
-        return new Vector(vector.x + this.x, vector.y + this.y);
+        return new Vector(this.x + vector.x, this.y + vector.y);
     }
 
     public subtract(vector: Vector): Vector {
-        return new Vector(vector.x - this.x, vector.y - this.y);
+        return new Vector(this.x - vector.x, this.y - vector.y);
     }
 
     public scale(scalar: number): Vector {

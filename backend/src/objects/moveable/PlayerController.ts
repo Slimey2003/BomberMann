@@ -1,3 +1,4 @@
+import type { Direction } from "../utils/Direction";
 import Vector from "../utils/Vector";
 import type Wall from "../wall/Wall";
 import type WallController from "../wall/WallController";
@@ -15,21 +16,28 @@ export default class PlayerController {
     }
 
     public genPlayer(playerNames: string[], lives: number, height: number, width: number) {
-        const xLast = width - 2;
-        const yLast = height - 2;
+        const xLast = (width - 2) * 10;
+        const yLast = (height - 2) * 10;
 
         //links oben, rechts unten, links unten, rechts oben
-        const pos: Vector[] = [new Vector(1, 1), new Vector(xLast, yLast), new Vector(1, yLast), new Vector(xLast, 1)];
+        const pos: Vector[] = [new Vector(10, 10), new Vector(xLast, yLast), new Vector(10, yLast), new Vector(xLast, 10)];
         for (let i = 0; i < playerNames.length; i++) {
             this.players.push(new Player(i, lives, playerNames[0], pos[i]))
         }
     }
 
+    public setPlayerVelocity(playerId: number, dir: Direction) {
+        this.players[playerId].setVelocity(dir.getVector().scale(2));
+    }
+
     public updateMovement() {
         for (const player of this.players) {
             if (player.getMovement().equals(Vector.nullVector)) continue;
-            const endVector = player.getPosition().add(player.getMovement());
-            const wall: Wall | undefined = this.wallController.getWallInVectorDirection(player.getPosition(), endVector);
+            const futureVector = player.getPosition().add(player.getMovement());
+            let wall: Wall | undefined = this.wallController.getWallInVectorDirection(player.getPosition(), futureVector);
+            if (!wall) {
+                wall = this.wallController.overlapsMoveableWithWall(player.getMovedBox());
+            }
             player.updateMove(wall);
         }
     }
@@ -41,7 +49,7 @@ export default class PlayerController {
     public playerTakeDamage(bombPos: Vector, bombRange: Vector[]) {
         for (const player of this.players) {
             for (const vec of bombRange) {
-                if (player.getBox().intersects(bombPos, vec)) {
+                if (player.getBox().intersects(bombPos, vec) != null) {
                     player.lostLive();
                     break;
                 }

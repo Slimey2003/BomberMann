@@ -3,7 +3,8 @@ import type Vector from "../utils/Vector";
 import Moveable from "./Moveable";
 
 export default class Bomb extends Moveable implements Delayed {
-    private static EXPOSITION_TIME: number = 5000; //sec
+    private static EXPOSITION_TIME: number = 8000; //sec
+    private static PROTECTION_TIME: number = 2000; //sec
     private playerId: number;
     private placeTime: number;
 
@@ -50,6 +51,10 @@ export default class Bomb extends Moveable implements Delayed {
     public addStrange(strange: number): Bomb {
         this.expositionStrange += strange;
         return this;
+    }
+
+    public noCollision(): boolean {
+        return ((this.placeTime + Bomb.PROTECTION_TIME) - Date.now()) > 0;
     }
 
     public getDelay(): number {

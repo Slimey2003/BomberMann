@@ -26,8 +26,23 @@ export default class WallController {
     }
 
     public getWallInVectorDirection(start: Vector, end: Vector): Wall | undefined {
+        let closestWall: Wall | undefined = undefined;
+        let minHitTime = Infinity;
+
         for (const wall of this.walls.values()) {
-            if (wall.getBox().intersects(start, end)) {
+            const hitTime = wall.getBox().intersects(start, end);
+            //Bei mehreren Treffer die am nächsten finden
+            if (hitTime !== null && hitTime < minHitTime) {
+                minHitTime = hitTime;
+                closestWall = wall;
+            }
+        }
+        return closestWall;
+    }
+
+    public overlapsMoveableWithWall(box: BoundingBox): Wall | undefined {
+        for (const wall of this.walls.values()) {
+            if (wall.getBox().overlaps(box)) {
                 return wall;
             }
         }
@@ -53,20 +68,7 @@ export default class WallController {
     public calculateRange(pos: Vector, range: number, dir: Direction): Vector {
         const rangeVectors: Vector[] = [];
         for (let i = 1; i <= range; i++) {
-            switch (dir) {
-                case Direction.NORTH:
-                    rangeVectors.push(pos.add(new Vector(0, i)));
-                    break;
-                case Direction.SOUTH:
-                    rangeVectors.push(pos.add(new Vector(0, -i)));
-                    break;
-                case Direction.EAST: 
-                    rangeVectors.push(pos.add(new Vector(0, i)));
-                    break;
-                case Direction.WEST:
-                    rangeVectors.push(pos.add(new Vector(0, -i)));
-                    break;
-            }
+            rangeVectors.push(dir.getVector().scale(i));
         }
         let vecRange: Vector = new Vector(0, 0);
         for (const vec of rangeVectors) {
@@ -89,7 +91,7 @@ export default class WallController {
             for (let x = 0; x < this.width; x++) {
                 if ((x === 0 || x === xLast ||  y === 0 ||  y === yLast) || 
                     (x % 2 === 0 && y % 2 === 0)) {
-                        const pos = new Vector(x, y); 
+                        const pos = new Vector(x * 10, y * 10); 
                         this.walls.set(pos, new Wall(`${x}-${y}`, pos));
                 }
             }
@@ -107,7 +109,7 @@ export default class WallController {
                 ) continue;
                 if (Math.random() > this.blockProbability) continue;
 
-                const pos = new Vector(x, y); 
+                const pos = new Vector(x * 10, y * 10); 
                 if (this.walls.get(pos) !== undefined) continue;
 
                 this.walls.set(pos, new BreakableWall(`${x}-${y}`, pos));
