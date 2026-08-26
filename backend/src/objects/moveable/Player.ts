@@ -15,11 +15,11 @@ export default class Player extends Moveable {
         this.lives = lives;
     }
 
-    public getId() {
+    public getId(): number {
         return this.id;
     }
 
-    public getName() {
+    public getName(): string {
         return this.name;
     }
 
@@ -28,7 +28,11 @@ export default class Player extends Moveable {
         this.lives--;
     }
 
-    public isDead() {
+    public getLives(): number {
+        return this.lives;
+    }
+
+    public isDead(): boolean {
         return this.lives <= 0;
     }
 

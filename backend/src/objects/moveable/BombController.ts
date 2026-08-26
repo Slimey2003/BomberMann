@@ -1,86 +1,125 @@
+import Controller from "../Controller";
 import Effect from "../effect/Effect";
 import DelayQueue from "../utils/DelayedQueue";
 import Vector from "../utils/Vector";
 import type Wall from "../wall/Wall";
-import type WallController from "../wall/WallController";
 import Bomb from "./Bombs";
-import type PlayerController from "./PlayerController";
+import ExplodeBomb from "./ExplodeBomb";
 
-export default class BombController {
-    private wallController: WallController
-    private playerController: PlayerController;
+export default class BombController extends Controller {
     private placedBombs: DelayQueue<Bomb> = new DelayQueue();
+    private explodeBombs: DelayQueue<ExplodeBomb> = new DelayQueue();
 
-    constructor(wallController: WallController, playerController: PlayerController) {
-        this.playerController = playerController;
-        this.wallController = wallController;
+    //Add Bomb
+
+    public addBomb(bomb: Bomb) {
+        this.placedBombs.put(bomb);
     }
+
+    public placeBomb(playerId: number) {
+        const player = super.getPlayerController().getPlayers()[playerId];
+        
+        const playerPos = player.getPosition();
+        const newBomb = new Bomb(player.getId(), this.modifyPosition(playerPos));
+        for (const bomb of this.getPlacedBombs()) {
+            if (newBomb.getBox().overlaps(bomb.getBox())) {
+                return;
+            }
+        }
+        this.placedBombs.put(newBomb);
+    }
+
+    //Pick Bombs
+
+    public triggerExplosion(): ExplodeBomb[] {
+        const pickBomb: ExplodeBomb[] = [];
+        let bomb: Bomb | undefined = undefined;
+        while (bomb = this.placedBombs.poll()) {
+            if (!bomb) break;
+            pickBomb.push(this.modifyBomb(bomb));
+        }
+
+        this.triggerOtherBomb(pickBomb);
+
+        this.explodeBombs.put(...pickBomb);
+        return pickBomb;
+    }
+
+    public triggerOtherBomb(pickBomb: ExplodeBomb[]) {
+        const triggers: ExplodeBomb[] = [...pickBomb];
+        do {
+            const trigger: ExplodeBomb | undefined = triggers.pop();
+            if (!trigger) break; //(Save is Save xD)
+
+            for (const bomb of this.placedBombs.getValues()) {
+                for (const vec of trigger.getCalculatedRange()) {
+                    
+                    if (bomb.getBox().intersects(trigger.getBomb().getPosition(), vec) != null) {
+                        const explode: ExplodeBomb = this.modifyBomb(bomb);
+
+                        this.placedBombs.delete(bomb);
+
+                        triggers.push(explode);
+                        pickBomb.push(explode);
+                    }
+                }
+            }
+        } while (triggers.length !== 0);
+    }
+
+    //Explode Time down
+
+    public triggerExplodeTimeDown() {
+        let explodeBomb: ExplodeBomb | undefined = undefined;
+        while (explodeBomb = this.explodeBombs.poll()) {
+            if (!explodeBomb) break;
+            for (const vec of explodeBomb.getCalculatedRange()) {
+                const eff: Effect | undefined = this.getWallController().expositionOnVector(explodeBomb, vec);
+                if (!eff) continue;
+                this.getEffectController().placeEffect(vec, eff);
+            }
+        }
+    }
+
+    //explodeBombs List
+
+    public getExplodeBombs() {
+        return this.explodeBombs;
+    }
+
+    public clearExplodeBombs() {
+        this.explodeBombs.clear();
+    }
+
+    //placedBombs List
+    
+    public getPlacedBombs(): Bomb[] {
+        return this.placedBombs.getValues();
+    }
+
+    public clearPlacedBombs() {
+        this.placedBombs.clear();
+    }
+
+    //Movement
 
     public updateMovement() {
         for (const bomb of this.placedBombs.getValues()) {
             if (bomb.getMovement().equals(Vector.nullVector)) continue;
             const futureVector = bomb.getPosition().add(bomb.getMovement());
-            let wall: Wall | undefined = this.wallController.getWallInVectorDirection(bomb.getPosition(), futureVector);
+            let wall: Wall | undefined = super.getWallController().getWallInVectorDirection(bomb.getPosition(), futureVector);
             if (!wall) {
-                wall = this.wallController.overlapsMoveableWithWall(bomb.getMovedBox());
+                wall = super.getWallController().overlapsMoveableWithWall(bomb.getMovedBox());
             }
             bomb.updateMove(wall);
             bomb.setVelocity(Vector.nullVector);
             bomb.setPosition(this.modifyPosition(bomb.getPosition()));
         }
     }
-
-    public placeBomb(playerId: number) {
-        const player = this.playerController.getPlayers()[playerId];
-        const playerBox = player.getBox();
-        for (const bomb of this.getBombs()) {
-            if (playerBox.overlaps(bomb.getBox())) {
-                return;
-            }
-        }
-
-        const playerPos = player.getPosition();
-        const newBomb = new Bomb(player.getId(), this.modifyPosition(playerPos));
-        this.placedBombs.put(newBomb);
-    }
-    
-    public pickBomb(): Bomb[] {
-        const pickBomb: Bomb[] = [];
-        let bomb: Bomb | undefined = undefined;
-        do {
-            bomb = this.placedBombs.poll();
-            if (!bomb) break;
-            this.modifyBomb(bomb);
-        } while (!bomb);
-
-        this.triggerOtherBomb(pickBomb);
-        return pickBomb;
-    }
-
-    public triggerOtherBomb(pickBomb: Bomb[]) {
-        const triggers: Bomb[] = [...pickBomb];
-        do {
-            const trigger: Bomb | undefined = triggers.pop();
-            if (!trigger) break; //(Save is Save xD)
-
-            for (const bomb of this.placedBombs.getValues()) {
-                for (const vec of trigger.getCalculatedRange()) {
-                    if (bomb.getBox().intersects(trigger.getPosition(), vec) != null) {
-                        this.modifyBomb(bomb);
-
-                        this.placedBombs.delete(bomb);
-
-                        triggers.push(bomb);
-                        pickBomb.push(bomb);
-                    }
-                }
-            }
-        } while (triggers.length !== 0);
-    }
     
     public playerCollidedWithBomb(withoutProtectionTime: boolean) { //withoutProtectionTime is for Testing because tests can not wait a specific time
-        for (const player of this.playerController.getPlayers()) {
-            for (const bomb of this.getBombs()) {
+        for (const player of super.getPlayerController().getPlayers()) {
+            for (const bomb of this.getPlacedBombs()) {
                 if (player.getBox().overlaps(bomb.getBox())) {
                     if (!withoutProtectionTime && bomb.noCollision()) continue;
                     bomb.setVelocity(player.getMovement().scale(20));
@@ -90,21 +129,21 @@ export default class BombController {
         }
     }
 
-    public getBombs(): Bomb[] {
-        return this.placedBombs.getValues();
-    }
+    //Modify
 
-    private modifyBomb(bomb: Bomb) {
-        const player = this.playerController.getPlayers()[bomb.getPlayerId()];
+    public modifyBomb(bomb: Bomb): ExplodeBomb {
+        const player = this.getPlayerController().getPlayers()[bomb.getPlayerId()];
         const effRange = player.getEffect(Effect.RANGE);
         const effStrange = player.getEffect(Effect.STRANGE);
+        const explode = new ExplodeBomb(bomb);
         if (effRange) {
-            bomb.addRange(effRange.getScale());
+            explode.addRange(effRange.getScale());
         }
         if (effStrange) {
-            bomb.addRange(effStrange.getScale());
+            explode.addRange(effStrange.getScale());
         }
-        bomb.setCalculatedRange(this.wallController.getExpositionRange(bomb));
+        explode.setCalculatedRange(this.getWallController().getExpositionRange(explode));
+        return explode;
     }
 
     private modifyPosition(pos: Vector): Vector {

@@ -7,7 +7,9 @@ import BreakableWall from '../objects/wall/BreakableWall';
 import PlayerController from '../objects/moveable/PlayerController';
 import { Direction } from '../objects/utils/Direction';
 import BombController from '../objects/moveable/BombController';
-import { waitForDebugger } from 'node:inspector';
+import Bomb from '../objects/moveable/Bombs';
+import Vector from '../objects/utils/Vector';
+import type EffectController from '../objects/effect/EffectController';
 
 describe("Game", () => {
     let game: Game | undefined;
@@ -21,6 +23,17 @@ describe("Game", () => {
     it.todo("stats", () => {});
     it.todo("ticks", () => {});
 
+    describe("EffectController", () => {
+        let controller: EffectController | undefined;
+        before(() => {
+            controller = game?.getEffectController();
+        })
+
+        it.todo("placeEffect", () => {
+            if(!game) return;
+        })
+    });
+    
     describe("WallController", () => {
         let controller: WallController | undefined;
         before(() => {
@@ -88,11 +101,35 @@ describe("Game", () => {
             });
         })
         describe("Effects", () => {
-            it.todo("Has Effects", () => {});
-            it.todo("Can used it", () => {});
+            it.todo("Has Effects", () => {
+
+            });
+            it.todo("Can used it", () => {
+
+            });
         })
-        it.todo("Lost Life", () => {});
-        it.todo("Dead", () => {});
+        
+        it("Player Lost Life", () => {
+            if (!controller) return;
+            const player = controller.getPlayers()[0];
+            expect(player.getLives()).toBe(3);
+            const bomb: Bomb = new Bomb(0, player.getPosition());
+            game?.getBombController().modifyBomb(bomb);
+            controller.playerTakeDamage(bomb.getPosition(), bomb.getCalculatedRange());
+            expect(player.getLives()).toBe(2);
+        });
+        
+        it("Player Dead", () => {
+            if (!controller) return;
+            const player = controller.getPlayers()[0];
+            expect(player.getLives()).toBe(2);
+            const bomb: Bomb = new Bomb(0, player.getPosition());
+            game?.getBombController().modifyBomb(bomb);
+            controller.playerTakeDamage(bomb.getPosition(), bomb.getCalculatedRange());
+            controller.playerTakeDamage(bomb.getPosition(), bomb.getCalculatedRange());
+            expect(player.getLives()).toBe(0);
+            expect(player.isDead()).toBe(true);
+        });
     });
 
     describe("BombController", () => {
@@ -102,22 +139,34 @@ describe("Game", () => {
             expect(controller).toBeInstanceOf(BombController);
         });
         describe("Placed", () => {
-            it.todo("Placed normal", () => {});
-            it.todo("Placed on BOM", () => {});
+            it("Placed normal", () => {
+                if (!controller) return;
+                controller.placeBomb(0);
+                expect(controller.getPlacedBombs().length).toBe(1);
+                controller.clearPlacedBombs();
+            });
+            it("Placed on BOM", () => {
+                if (!controller) return;
+                controller.placeBomb(0);
+                expect(controller.getPlacedBombs().length).toBe(1);
+                controller.placeBomb(0);
+                expect(controller.getPlacedBombs().length).toBe(1);
+                controller.clearPlacedBombs();
+            });
         });
         it("Movement", () => {
             if (!controller) return;
             controller.placeBomb(0);
             console.log(game?.getPlayerController().getPlayers()[0].getPosition());
-            const bomb = controller.getBombs()[0];
+            const bomb = controller.getPlacedBombs()[0];
             const posBefore = bomb.getPosition();
             expect(bomb.getMovement().getY()).toEqual(0);
             controller.playerCollidedWithBomb(true);
-            console.log(bomb.getMovement().getY());
-            expect(bomb.getMovement().getY()).toEqual(40);
+            expect(bomb.getMovement().getY()).toBe(40);
             controller.updateMovement();
-            expect(bomb.getMovement().getY()).toEqual(0);
+            expect(bomb.getMovement().getY()).toBe(0);
             expect(bomb.getPosition()).not.equal(posBefore);
+            controller.clearPlacedBombs();
         });
         describe("Collision", () => {
             it.todo("Collision with Wall", () => {
@@ -127,19 +176,32 @@ describe("Game", () => {
                 //Gehört wohl doch hier hin da ich das Place und playerCollidedWithBomb im BombController hab nicht in Player ;D
                 if (!controller) return;
                 controller.placeBomb(0);
-                const bomb = controller.getBombs()[0];
+                const bomb = controller.getPlacedBombs()[0];
                 expect(bomb.getMovement().getY()).toEqual(0);
                 controller.playerCollidedWithBomb(true);
-                expect(bomb.getMovement().getY()).toEqual(40);
+                expect(bomb.getMovement().getY()).toBe(40);
+                controller.clearPlacedBombs();
             });
         })
         describe("Effects", () => {
-            it.todo("Has Effects", () => {});
-            it.todo("Can used it", () => {});
+            it.todo("Has Effects", () => {
+                
+            });
+            it.todo("Can used it", () => {
+                
+            });
         })
         describe("Exposition", () => {
-            it.todo("PUFF after place", () => {});
-            it.todo("Chan Reaction", () => {});
+            it("Chan Reaction", () => {
+                if (!controller) return;
+                const bomb: Bomb = new Bomb(0, new Vector(20, 10));
+                const bomb1: Bomb = new Bomb(0, new Vector(10, 10));
+                controller.addBomb(bomb1);
+                const triggers = [ controller.modifyBomb(bomb)];
+                expect(triggers.length).toBe(1);
+                controller.triggerOtherBomb(triggers);
+                expect(triggers.length).toBe(2);
+            });
         });
     });
 })

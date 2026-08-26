@@ -5,12 +5,13 @@ import Vector from "../utils/Vector";
 import BreakableWall from "./BreakableWall";
 import Wall from "./Wall";
 import type BoundingBox from "../utils/BoundingBox";
+import type ExplodeBomb from "../moveable/ExplodeBomb";
 
 export default class WallController {
     private height: number;
     private width: number;
     private blockProbability: number;
-    private walls: Map<Vector, Wall>;
+    private walls: Map<string, Wall>;
 
     constructor(height: number, width: number, blockProbability: number) {
         this.height = height;
@@ -48,39 +49,38 @@ export default class WallController {
         }
     }
 
-    public expositionOnVector(bomb: Bomb, vec: Vector): Effect | undefined {
-        const wall = this.walls.get(vec);
+    public expositionOnVector(bomb: ExplodeBomb, vec: Vector): Effect | undefined {
+        const wall = this.walls.get(vec.toHashKey());
         if (!wall) return undefined;
         if (wall instanceof BreakableWall) {
             wall.addDamage(bomb.getStrange());
             if (wall.isDestroyed()) {
-                this.walls.delete(wall.getPosition());
+                this.walls.delete(vec.toHashKey());
                 return wall.getEffect();
             }
         }
         return undefined;
     }
 
-    public getExpositionRange(bomb: Bomb): Vector[] {
-        return Direction.values().map(dir => this.calculateRange(bomb.getPosition(), bomb.getRange(), dir));
+    public getExpositionRange(bomb: ExplodeBomb): Vector[] {
+        return Direction.values().map(dir => this.calculateRange(bomb.getBomb().getPosition(), bomb.getRange(), dir));
     }
 
     public calculateRange(pos: Vector, range: number, dir: Direction): Vector {
         const rangeVectors: Vector[] = [];
-        for (let i = 1; i <= range; i++) {
-            rangeVectors.push(dir.getVector().scale(i));
+        for (let i = 5; i <= range; i+=5) {
+            rangeVectors.push(pos.add(dir.getVector().scale(i)));
         }
         let vecRange: Vector = new Vector(0, 0);
         for (const vec of rangeVectors) {
-            const wall =  this.walls.get(vec);
+            const wall =  this.walls.get(vec.toHashKey());
             if (!wall) {
                 vecRange = vec;
-            } else if (this.walls.get(vec) instanceof BreakableWall) {
+            } else if (this.walls.get(vec.toHashKey()) instanceof BreakableWall) {
                 vecRange = vec;
                 break;
-            } else if (this.walls.get(vec)) break;
+            } else if (this.walls.get(vec.toHashKey())) break;
         }
-        
         return vecRange;
     }
 
@@ -92,7 +92,7 @@ export default class WallController {
                 if ((x === 0 || x === xLast ||  y === 0 ||  y === yLast) || 
                     (x % 2 === 0 && y % 2 === 0)) {
                         const pos = new Vector(x * 10, y * 10); 
-                        this.walls.set(pos, new Wall(`${x}-${y}`, pos));
+                        this.walls.set(pos.toHashKey(), new Wall(`${x}-${y}`, pos));
                 }
             }
         }
@@ -110,9 +110,9 @@ export default class WallController {
                 if (Math.random() > this.blockProbability) continue;
 
                 const pos = new Vector(x * 10, y * 10); 
-                if (this.walls.get(pos) !== undefined) continue;
+                if (this.walls.get(pos.toHashKey()) !== undefined) continue;
 
-                this.walls.set(pos, new BreakableWall(`${x}-${y}`, pos));
+                this.walls.set(pos.toHashKey(), new BreakableWall(`${x}-${y}`, pos));
             }
         }
     }

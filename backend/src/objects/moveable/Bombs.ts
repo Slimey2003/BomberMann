@@ -3,15 +3,10 @@ import type Vector from "../utils/Vector";
 import Moveable from "./Moveable";
 
 export default class Bomb extends Moveable implements Delayed {
-    private static EXPOSITION_TIME: number = 8000; //sec
+    private static EXPOSITION_EXPIRATION: number = 8000; //sec
     private static PROTECTION_TIME: number = 2000; //sec
     private playerId: number;
     private placeTime: number;
-
-    private expositionRange: number = 1;
-    private expositionStrange: number = 1;
-
-    private calculatedRange: Vector[] = [];
 
     constructor(playerId: number, startPosition: Vector) {
         super(startPosition, 4, 4); //4 für die Breite und Höhe
@@ -19,38 +14,12 @@ export default class Bomb extends Moveable implements Delayed {
         this.playerId = playerId;
     }
 
-    public getPlayerId() {
+    public getPlayerId(): number {
         return this.playerId;
     }
 
-    public getPlacedTime() {
+    public getPlacedTime(): number {
         return this.placeTime;
-    }
-
-    public getRange() {
-        return this.expositionRange;
-    }
-
-    public getStrange() {
-        return this.expositionStrange;
-    }
-
-    public getCalculatedRange() {
-        return this.calculatedRange;
-    }
-
-    public setCalculatedRange(range: Vector[]) {
-        this.calculatedRange = range;
-    }
-
-    public addRange(range: number): Bomb {
-        this.expositionRange += range;
-        return this;
-    }
-
-    public addStrange(strange: number): Bomb {
-        this.expositionStrange += strange;
-        return this;
     }
 
     public noCollision(): boolean {
@@ -58,6 +27,6 @@ export default class Bomb extends Moveable implements Delayed {
     }
 
     public getDelay(): number {
-        return (this.placeTime + Bomb.EXPOSITION_TIME) - Date.now();
+        return (this.placeTime + Bomb.EXPOSITION_EXPIRATION) - Date.now();
     }
 }

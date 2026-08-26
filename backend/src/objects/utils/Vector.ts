@@ -1,7 +1,9 @@
 export default class Vector {
+    public static readonly EPSILON = 1e-10;
     public static nullVector = new Vector(0, 0); 
-    private x;
-    private y;
+    
+    private x: number;
+    private y: number;
 
     constructor(x: number, y: number) {
         if (Number.isNaN(x) || Number.isNaN(y)) {
@@ -11,6 +13,7 @@ export default class Vector {
         if (!Number.isFinite(x) || !Number.isFinite(y)) {
             throw new TypeError("Die Eingabe ist nicht Finite (endlich)");
         }
+        
         this.x = x;
         this.y = y;
     }
@@ -23,12 +26,12 @@ export default class Vector {
         return this.y;
     }
 
-    public isVector(x: number, y: number) {
-        return this.x == x && this.y == y; 
+    public isVector(x: number, y: number): boolean {
+        return Math.abs(this.x - x) < Vector.EPSILON && Math.abs(this.y - y) < Vector.EPSILON; 
     }
 
-    public equals(vector: Vector) {
-        return vector.x == this.x && vector.y == this.y;
+    public equals(vector: Vector): boolean {
+        return Math.abs(this.x - vector.x) < Vector.EPSILON && Math.abs(this.y - vector.y) < Vector.EPSILON;
     }
 
     public add(vector: Vector): Vector {
@@ -40,7 +43,7 @@ export default class Vector {
     }
 
     public scale(scalar: number): Vector {
-        if (Number.isNaN(scalar) || !isFinite(scalar)) {
+        if (Number.isNaN(scalar) || !Number.isFinite(scalar)) {
             throw new TypeError("Scalar must be a finite number.");
         }
         return new Vector(this.x * scalar, this.y * scalar);
@@ -62,7 +65,11 @@ export default class Vector {
         return this.scale(1 / mag);
     }
 
-    public getCopy() {
+    public getCopy(): Vector {
         return new Vector(this.x, this.y);
+    }
+
+    public toHashKey(): string {
+        return this.x.toFixed(2) + "|" + this.y.toFixed(2);
     }
 }

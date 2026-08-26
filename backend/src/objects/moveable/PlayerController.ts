@@ -1,17 +1,16 @@
+import Controller from "../Controller";
 import type { Direction } from "../utils/Direction";
 import Vector from "../utils/Vector";
 import type Wall from "../wall/Wall";
-import type WallController from "../wall/WallController";
 import Player from "./Player";
 
-export default class PlayerController {
+export default class PlayerController extends Controller {
     private players: Player[];
-    private wallController: WallController;
 
 
-    constructor(wallController: WallController, playerNames: string[], lives: number, height: number, width: number) {
+    constructor(playerNames: string[], lives: number, height: number, width: number) {
+        super();
         this.players = [];
-        this.wallController = wallController;
         this.genPlayer(playerNames, lives, height, width);
     }
 
@@ -34,9 +33,9 @@ export default class PlayerController {
         for (const player of this.players) {
             if (player.getMovement().equals(Vector.nullVector)) continue;
             const futureVector = player.getPosition().add(player.getMovement());
-            let wall: Wall | undefined = this.wallController.getWallInVectorDirection(player.getPosition(), futureVector);
+            let wall: Wall | undefined = super.getWallController().getWallInVectorDirection(player.getPosition(), futureVector);
             if (!wall) {
-                wall = this.wallController.overlapsMoveableWithWall(player.getMovedBox());
+                wall = super.getWallController().overlapsMoveableWithWall(player.getMovedBox());
             }
             player.updateMove(wall);
         }
