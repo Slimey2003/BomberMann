@@ -26,6 +26,7 @@ export default class BombController {
             }
             bomb.updateMove(wall);
             bomb.setVelocity(Vector.nullVector);
+            bomb.setPosition(this.modifyPosition(bomb.getPosition()));
         }
     }
 
@@ -39,11 +40,7 @@ export default class BombController {
         }
 
         const playerPos = player.getPosition();
-        const gridSize = 10; 
-        const centerX = Math.round(playerPos.getX() / gridSize) * gridSize;
-        const centerY = Math.round(playerPos.getY() / gridSize) * gridSize;
-        const centerFieldPos = new Vector(centerX, centerY);
-        const newBomb = new Bomb(player.getId(), centerFieldPos);
+        const newBomb = new Bomb(player.getId(), this.modifyPosition(playerPos));
         this.placedBombs.put(newBomb);
     }
     
@@ -108,5 +105,12 @@ export default class BombController {
             bomb.addRange(effStrange.getScale());
         }
         bomb.setCalculatedRange(this.wallController.getExpositionRange(bomb));
+    }
+
+    private modifyPosition(pos: Vector): Vector {
+        const gridSize = 10; 
+        const centerX = Math.round(pos.getX() / gridSize) * gridSize;
+        const centerY = Math.round(pos.getY() / gridSize) * gridSize;
+        return new Vector(centerX, centerY);
     }
 }
