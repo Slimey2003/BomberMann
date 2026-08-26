@@ -19,6 +19,10 @@ export default abstract class Moveable {
         return this.position.getCopy();
     }
 
+    public setPosition(vec: Vector) {
+        this.position = vec;
+    }
+
     public getBox(): BoundingBox {
         return new BoundingBox(this.position, this.height, this.width);
     }
