@@ -1,14 +1,13 @@
 import BoundingBox from "../utils/BoundingBox";
 import type Vector from "../utils/Vector";
-import Effect from "./Effect";
 
 export default class EffectCard {
-    private effect: Effect;
+    private effectId: number;
     private position: Vector;
     private box: BoundingBox;
 
-    constructor(pos: Vector, eff: Effect) {
-        this.effect = eff;
+    constructor(pos: Vector, eff: number) {
+        this.effectId = eff;
         this.position = pos;
         this.box = new BoundingBox(pos, 9, 9);
     }
@@ -17,8 +16,8 @@ export default class EffectCard {
         return this.position;
     }
 
-    public getEffect(): Effect {
-        return this.effect;
+    public getEffectId(): number {
+        return this.effectId;
     }
 
     public getBox(): BoundingBox {

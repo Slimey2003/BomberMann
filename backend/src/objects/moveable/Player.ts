@@ -36,6 +36,10 @@ export default class Player extends Moveable {
         return this.lives <= 0;
     }
 
+    public clearEffects() {
+        this.effects = [];
+    }
+
     public addEffectOrChange(effectId: number) {
         let eff: Effect | undefined = this.getEffect(effectId);
         if (eff) {
