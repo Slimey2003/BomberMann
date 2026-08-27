@@ -10,6 +10,8 @@ import BombController from '../objects/moveable/BombController';
 import Bomb from '../objects/moveable/Bombs';
 import Vector from '../objects/utils/Vector';
 import type EffectController from '../objects/effect/EffectController';
+import Effect from '../objects/effect/Effect';
+import type ExplodeBomb from '../objects/moveable/ExplodeBomb';
 
 describe("Game", () => {
     let game: Game | undefined;
@@ -29,8 +31,11 @@ describe("Game", () => {
             controller = game?.getEffectController();
         })
 
-        it.todo("placeEffect", () => {
+        it("placeEffect", () => {
             if(!game) return;
+            if (!controller) return;
+            controller.placeEffect(new Vector(10, 10), Effect.SPEED);
+            expect(controller.getEffects().length).toBe(1);
         })
     });
     
@@ -60,7 +65,6 @@ describe("Game", () => {
             );
             expect(hasNormalWall).toBe(true);
         });
-        it.todo("Timer", () => {});
     });
 
     describe("PlayerController", () => {
@@ -101,11 +105,26 @@ describe("Game", () => {
             });
         })
         describe("Effects", () => {
-            it.todo("Has Effects", () => {
-
+            it("pick Effect", () => {
+                if (!controller) return;
+                const player = controller.getPlayers()[0];
+                player.setPosition(new Vector(10, 10));
+                
+                controller.setPlayerVelocity(0, Direction.SOUTH);
+                controller.updateMovement();
+                const eff = player.getEffect(Effect.SPEED);
+                expect(eff).not.toBe(undefined)
+                controller.setPlayerVelocity(0, Direction.NONE);
+                player.clearEffects();
             });
-            it.todo("Can used it", () => {
-
+            it("Can used it", () => {
+                if (!controller) return;
+                const player = controller.getPlayers()[0];
+                player.addEffectOrChange(Effect.SPEED);
+                controller.setPlayerVelocity(0, Direction.SOUTH);
+                expect(player.getMovement().getY()).toBe(4);
+                controller.setPlayerVelocity(0, Direction.NONE);
+                player.clearEffects();
             });
         })
         
@@ -114,8 +133,8 @@ describe("Game", () => {
             const player = controller.getPlayers()[0];
             expect(player.getLives()).toBe(3);
             const bomb: Bomb = new Bomb(0, player.getPosition());
-            game?.getBombController().modifyBomb(bomb);
-            controller.playerTakeDamage(bomb.getPosition(), bomb.getCalculatedRange());
+            const explode = controller.getBombController().modifyBomb(bomb);
+            controller.playerTakeDamage(bomb.getPosition(), explode.getCalculatedRange());
             expect(player.getLives()).toBe(2);
         });
         
@@ -124,9 +143,9 @@ describe("Game", () => {
             const player = controller.getPlayers()[0];
             expect(player.getLives()).toBe(2);
             const bomb: Bomb = new Bomb(0, player.getPosition());
-            game?.getBombController().modifyBomb(bomb);
-            controller.playerTakeDamage(bomb.getPosition(), bomb.getCalculatedRange());
-            controller.playerTakeDamage(bomb.getPosition(), bomb.getCalculatedRange());
+            const explode = controller.getBombController().modifyBomb(bomb);
+            controller.playerTakeDamage(bomb.getPosition(), explode.getCalculatedRange());
+            controller.playerTakeDamage(bomb.getPosition(), explode.getCalculatedRange());
             expect(player.getLives()).toBe(0);
             expect(player.isDead()).toBe(true);
         });
@@ -156,8 +175,10 @@ describe("Game", () => {
         });
         it("Movement", () => {
             if (!controller) return;
+            controller.getPlayerController().setPlayerVelocity(0, Direction.SOUTH);
+            const player = controller.getPlayerController().getPlayers()[0];
+            player.setPosition(new Vector(10, 10));
             controller.placeBomb(0);
-            console.log(game?.getPlayerController().getPlayers()[0].getPosition());
             const bomb = controller.getPlacedBombs()[0];
             const posBefore = bomb.getPosition();
             expect(bomb.getMovement().getY()).toEqual(0);
@@ -184,11 +205,16 @@ describe("Game", () => {
             });
         })
         describe("Effects", () => {
-            it.todo("Has Effects", () => {
-                
-            });
-            it.todo("Can used it", () => {
-                
+            it("Can used it", () => {
+                if (!controller) return;
+                const bomb: Bomb = new Bomb(0, new Vector(20, 10));
+                const player = controller.getPlayerController().getPlayers()[0];
+                player.addEffectOrChange(Effect.RANGE);
+                player.addEffectOrChange(Effect.STRANGE);
+                const explode: ExplodeBomb = controller.modifyBomb(bomb);
+                expect(explode.getRange()).toBe(60);
+                expect(explode.getStrange()).toBe(3);
+
             });
         })
         describe("Exposition", () => {
@@ -201,6 +227,7 @@ describe("Game", () => {
                 expect(triggers.length).toBe(1);
                 controller.triggerOtherBomb(triggers);
                 expect(triggers.length).toBe(2);
+                controller.clearPlacedBombs();
             });
         });
     });

@@ -47,7 +47,7 @@ export default class ExplodeBomb implements Delayed {
     }
 
     public addRange(range: number): ExplodeBomb {
-        this.expositionRange += range;
+        this.expositionRange += (range * 10);
         return this;
     }
 

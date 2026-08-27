@@ -38,6 +38,7 @@ export default class PlayerController extends Controller {
                 wall = super.getWallController().overlapsMoveableWithWall(player.getMovedBox());
             }
             player.updateMove(wall);
+            super.getEffectController().pickUp(player);
         }
     }
 

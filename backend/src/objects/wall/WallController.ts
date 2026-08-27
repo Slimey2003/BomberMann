@@ -49,7 +49,7 @@ export default class WallController {
         }
     }
 
-    public expositionOnVector(bomb: ExplodeBomb, vec: Vector): Effect | undefined {
+    public expositionOnVector(bomb: ExplodeBomb, vec: Vector): number | undefined {
         const wall = this.walls.get(vec.toHashKey());
         if (!wall) return undefined;
         if (wall instanceof BreakableWall) {

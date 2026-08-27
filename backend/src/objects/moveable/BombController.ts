@@ -74,7 +74,7 @@ export default class BombController extends Controller {
         while (explodeBomb = this.explodeBombs.poll()) {
             if (!explodeBomb) break;
             for (const vec of explodeBomb.getCalculatedRange()) {
-                const eff: Effect | undefined = this.getWallController().expositionOnVector(explodeBomb, vec);
+                const eff: number | undefined = this.getWallController().expositionOnVector(explodeBomb, vec);
                 if (!eff) continue;
                 this.getEffectController().placeEffect(vec, eff);
             }
@@ -140,7 +140,7 @@ export default class BombController extends Controller {
             explode.addRange(effRange.getScale());
         }
         if (effStrange) {
-            explode.addRange(effStrange.getScale());
+            explode.addStrange(effStrange.getScale());
         }
         explode.setCalculatedRange(this.getWallController().getExpositionRange(explode));
         return explode;
