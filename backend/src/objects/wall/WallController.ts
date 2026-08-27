@@ -1,11 +1,8 @@
-import type Bomb from "../moveable/Bombs";
 import { Direction } from "../utils/Direction";
-import type Effect from "../effect/Effect";
 import Vector from "../utils/Vector";
 import BreakableWall from "./BreakableWall";
 import Wall from "./Wall";
 import type BoundingBox from "../utils/BoundingBox";
-import type ExplodeBomb from "../moveable/ExplodeBomb";
 
 export default class WallController {
     private height: number;
@@ -49,11 +46,11 @@ export default class WallController {
         }
     }
 
-    public expositionOnVector(bomb: ExplodeBomb, vec: Vector): number | undefined {
+    public expositionOnVector(strange: number, vec: Vector): number | undefined {
         const wall = this.walls.get(vec.toHashKey());
         if (!wall) return undefined;
         if (wall instanceof BreakableWall) {
-            wall.addDamage(bomb.getStrange());
+            wall.addDamage(strange);
             if (wall.isDestroyed()) {
                 this.walls.delete(vec.toHashKey());
                 return wall.getEffect();
@@ -62,8 +59,8 @@ export default class WallController {
         return undefined;
     }
 
-    public getExpositionRange(bomb: ExplodeBomb): Vector[] {
-        return Direction.values().map(dir => this.calculateRange(bomb.getBomb().getPosition(), bomb.getRange(), dir));
+    public getExpositionRange(pos: Vector, range: number): Vector[] {
+        return Direction.values().map(dir => this.calculateRange(pos, range, dir));
     }
 
     public calculateRange(pos: Vector, range: number, dir: Direction): Vector {

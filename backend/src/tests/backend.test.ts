@@ -1,5 +1,5 @@
-import { before } from 'node:test';
-import { expect, it, describe } from 'vitest'
+import { afterEach, before, beforeEach } from 'node:test';
+import { expect, it, describe, vi } from 'vitest'
 import Game from '../objects/Game';
 import WallController from '../objects/wall/WallController';
 import Wall from '../objects/wall/Wall';
@@ -15,15 +15,33 @@ import type ExplodeBomb from '../objects/moveable/ExplodeBomb';
 
 describe("Game", () => {
     let game: Game | undefined;
-    before(() => {
+
+    beforeEach(() => {
+        vi.useFakeTimers();
         game = new Game(["player1", "player2"], 19, 15);
+    });
+
+    afterEach(() => {
+        game?.gameStop();
+        vi.useRealTimers();
+        vi.restoreAllMocks();
     });
 
     it.todo("config", () => {});
     it.todo("running", () => {});
     it.todo("ending", () => {});
     it.todo("stats", () => {});
-    it.todo("ticks", () => {});
+    it("ticks", () => {
+        if (!game) return;
+        const player = game.getPlayerController().getPlayers()[0];
+        game.getPlayerController().setPlayerVelocity(0, Direction.SOUTH);
+        game.tick(0, 0);
+        game.getBombController().placeBomb(0);
+        expect(player.getPosition().getY()).toBe(12);
+        game.tick(0, 1);
+        game.tick(0, 2);
+        expect(player.getPosition().getY()).toBe(14);
+    });
 
     describe("EffectController", () => {
         let controller: EffectController | undefined;
@@ -218,6 +236,29 @@ describe("Game", () => {
             });
         })
         describe("Exposition", () => {
+            it("Explode After Time", () => {
+                if (!controller) return;
+                //Trigger One Bomb
+                const player = controller.getPlayerController().getPlayers()[0];
+                player.setPosition(new Vector(10, 10));
+                controller.placeBomb(0);
+                expect(controller.triggerExplosion().length).toBe(0);
+                vi.advanceTimersByTime(7999);
+                expect(controller.triggerExplosion().length).toBe(0);
+                vi.advanceTimersByTime(1);
+                expect(controller.triggerExplosion().length).toBe(1);
+
+                //Trigger Two Bomb
+                controller.placeBomb(0);
+                player.setPosition(new Vector(10, 20));
+                vi.advanceTimersByTime(5);
+                controller.placeBomb(0);
+                expect(controller.triggerExplosion().length).toBe(0);
+                vi.advanceTimersByTime(7994);
+                expect(controller.triggerExplosion().length).toBe(0);
+                vi.advanceTimersByTime(1);
+                expect(controller.triggerExplosion().length).toBe(2);
+            })
             it("Chan Reaction", () => {
                 if (!controller) return;
                 const bomb: Bomb = new Bomb(0, new Vector(20, 10));

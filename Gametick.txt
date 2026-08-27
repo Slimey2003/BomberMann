@@ -1,0 +1,11 @@
+Pro Sekunde 4 GameTicks
+
+Je 2 GameTicks
+- updateMovement Player
+- playerCollidedWithBomb
+- updateMovement Bomb
+
+Je 4 GameTicks
+- triggerExplosion
+- triggerExplodeTick
+- triggerExplodeTimeDown

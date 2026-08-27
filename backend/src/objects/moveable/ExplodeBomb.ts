@@ -15,7 +15,7 @@ export default class ExplodeBomb implements Delayed {
 
     constructor(bomb: Bomb) {
         this.bomb = bomb;
-        this.explodeTime = Date.now();
+        this.explodeTime = performance.now();
     }
 
     public getBomb() {
@@ -57,6 +57,6 @@ export default class ExplodeBomb implements Delayed {
     }
 
     public getDelay(): number {
-        return (this.explodeTime + ExplodeBomb.EXPOSITION_TIME) - Date.now();
+        return (this.explodeTime + ExplodeBomb.EXPOSITION_TIME) - performance.now();
     }
 }
