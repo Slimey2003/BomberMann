@@ -21,7 +21,7 @@ export default class PlayerController extends Controller {
         //links oben, rechts unten, links unten, rechts oben
         const pos: Vector[] = [new Vector(10, 10), new Vector(xLast, yLast), new Vector(10, yLast), new Vector(xLast, 10)];
         for (let i = 0; i < playerNames.length; i++) {
-            this.players.push(new Player(i, lives, playerNames[0], pos[i]))
+            this.players.push(new Player(i, lives, playerNames[0], pos[i]));
         }
     }
 
@@ -40,10 +40,6 @@ export default class PlayerController extends Controller {
             player.updateMove(wall);
             super.getEffectController().pickUp(player);
         }
-    }
-
-    public addEffectOrChangeToPlayer(playerId: number, effectId: number) {
-        this.players[playerId].addEffectOrChange(effectId);
     }
 
     public playerTakeDamage(bombPos: Vector, bombRange: Vector[]) {

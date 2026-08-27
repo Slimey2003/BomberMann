@@ -67,14 +67,20 @@ export default class BombController extends Controller {
         } while (triggers.length !== 0);
     }
 
-    //Explode Time down
+    //Explode
+
+    public triggerExplodeTick() {
+        for (const explode of this.explodeBombs.getValues()) {
+            this.getPlayerController().playerTakeDamage(explode.getBomb().getPosition(), explode.getCalculatedRange());
+        }
+    }
 
     public triggerExplodeTimeDown() {
         let explodeBomb: ExplodeBomb | undefined = undefined;
         while (explodeBomb = this.explodeBombs.poll()) {
             if (!explodeBomb) break;
             for (const vec of explodeBomb.getCalculatedRange()) {
-                const eff: number | undefined = this.getWallController().expositionOnVector(explodeBomb, vec);
+                const eff: number | undefined = this.getWallController().expositionOnVector(explodeBomb.getStrange(), vec);
                 if (!eff) continue;
                 this.getEffectController().placeEffect(vec, eff);
             }
@@ -142,7 +148,7 @@ export default class BombController extends Controller {
         if (effStrange) {
             explode.addStrange(effStrange.getScale());
         }
-        explode.setCalculatedRange(this.getWallController().getExpositionRange(explode));
+        explode.setCalculatedRange(this.getWallController().getExpositionRange(bomb.getPosition(), explode.getRange()));
         return explode;
     }
 

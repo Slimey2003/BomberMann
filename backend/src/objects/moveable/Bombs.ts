@@ -10,7 +10,7 @@ export default class Bomb extends Moveable implements Delayed {
 
     constructor(playerId: number, startPosition: Vector) {
         super(startPosition, 4, 4); //4 für die Breite und Höhe
-        this.placeTime = Date.now();
+        this.placeTime = performance.now();
         this.playerId = playerId;
     }
 
@@ -27,6 +27,6 @@ export default class Bomb extends Moveable implements Delayed {
     }
 
     public getDelay(): number {
-        return (this.placeTime + Bomb.EXPOSITION_EXPIRATION) - Date.now();
+        return (this.placeTime + Bomb.EXPOSITION_EXPIRATION) - performance.now();
     }
 }
