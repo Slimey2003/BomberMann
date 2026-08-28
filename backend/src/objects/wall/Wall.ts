@@ -1,5 +1,6 @@
-import BoundingBox from "../utils/BoundingBox";
-import type Vector from "../utils/Vector";
+import BoundingBox from "@project/utils/BoundingBox";
+import type Vector from "@project/utils/Vector";
+
 
 export default class Wall {
     private id: string;

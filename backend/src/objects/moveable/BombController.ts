@@ -1,10 +1,10 @@
 import Controller from "../Controller";
-import Effect from "../effect/Effect";
 import DelayQueue from "../utils/DelayedQueue";
-import Vector from "../utils/Vector";
+import Vector from "@project/utils/Vector";
 import type Wall from "../wall/Wall";
 import Bomb from "./Bombs";
 import ExplodeBomb from "./ExplodeBomb";
+import { EffectType } from "@project/utils";
 
 export default class BombController extends Controller {
     private placedBombs: DelayQueue<Bomb> = new DelayQueue();
@@ -52,8 +52,8 @@ export default class BombController extends Controller {
             if (!trigger) break; //(Save is Save xD)
 
             for (const bomb of this.placedBombs.getValues()) {
+                if (bomb.getId() == trigger.getBomb().getId()) continue;
                 for (const vec of trigger.getCalculatedRange()) {
-                    
                     if (bomb.getBox().intersects(trigger.getBomb().getPosition(), vec) != null) {
                         const explode: ExplodeBomb = this.modifyBomb(bomb);
 
@@ -89,8 +89,8 @@ export default class BombController extends Controller {
 
     //explodeBombs List
 
-    public getExplodeBombs() {
-        return this.explodeBombs;
+    public getExplodeBombs(): ExplodeBomb[] {
+        return this.explodeBombs.getValues();
     }
 
     public clearExplodeBombs() {
@@ -139,8 +139,8 @@ export default class BombController extends Controller {
 
     public modifyBomb(bomb: Bomb): ExplodeBomb {
         const player = this.getPlayerController().getPlayers()[bomb.getPlayerId()];
-        const effRange = player.getEffect(Effect.RANGE);
-        const effStrange = player.getEffect(Effect.STRANGE);
+        const effRange = player.getEffect(EffectType.RANGE);
+        const effStrange = player.getEffect(EffectType.STRANGE);
         const explode = new ExplodeBomb(bomb);
         if (effRange) {
             explode.addRange(effRange.getScale());

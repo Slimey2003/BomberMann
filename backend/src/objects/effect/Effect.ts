@@ -1,8 +1,6 @@
-export default class Effect {
-    static SPEED = 0;
-    static STRANGE = 1;
-    static RANGE = 2;
+import { EffectType } from "@project/utils";
 
+export default class Effect {
     static SPEED_SCALE_MULTIPLE = 2;
     static STRANGE_SCALE_MULTIPLE = 2;
     static RANGE_SCALE_MULTIPLE = 2;
@@ -18,11 +16,11 @@ export default class Effect {
 
     public static getEffectById(id: number): Effect | undefined {
         switch(id) {
-            case Effect.SPEED:
+            case EffectType.SPEED:
                 return new Effect(id, Effect.SPEED_SCALE_MULTIPLE);
-            case Effect.STRANGE:
+            case EffectType.STRANGE:
                 return new Effect(id, Effect.STRANGE_SCALE_MULTIPLE);
-            case Effect.RANGE:
+            case EffectType.RANGE:
                 return new Effect(id, Effect.RANGE_SCALE_MULTIPLE);
         }
     }

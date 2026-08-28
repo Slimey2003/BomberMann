@@ -1,5 +1,5 @@
-import BoundingBox from "../utils/BoundingBox";
-import Vector from "../utils/Vector";
+import BoundingBox from "@project/utils/BoundingBox";
+import Vector from "@project/utils/Vector";
 import type Wall from "../wall/Wall";
 
 export default abstract class Moveable {

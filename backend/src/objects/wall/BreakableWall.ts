@@ -1,5 +1,5 @@
 import { getRandomInt } from "../../Util";
-import type Vector from "../utils/Vector";
+import type Vector from "@project/utils/Vector";
 import Wall from "./Wall";
 
 export default class BreakableWall extends Wall {

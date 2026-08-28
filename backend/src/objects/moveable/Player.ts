@@ -1,6 +1,7 @@
 import Effect from "../effect/Effect";
-import type Vector from "../utils/Vector";
+import type Vector from "@project/utils/Vector";
 import Moveable from "./Moveable";
+import { EffectType } from "@project/utils";
 
 export default class Player extends Moveable {
     private id: number;
@@ -55,7 +56,7 @@ export default class Player extends Moveable {
      * Ändernt auf basis des (wenn vorhanden) Speed Effekts den gegeben Vector für die Velocity
      */
     public setVelocity(vector: Vector) {
-        const eff = this.getEffect(Effect.SPEED);
+        const eff = this.getEffect(EffectType.SPEED);
         if (!eff) {
             super.setVelocity(vector);
             return;
