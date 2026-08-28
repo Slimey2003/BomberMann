@@ -72,6 +72,8 @@ export default class Game {
 
 
     public tick = (deltaTime: number, counter: number): void => {
+        if (this.gameOver()) return;
+
         const pController = this.getPlayerController();
         const bController = this.getBombController();
 
@@ -89,11 +91,14 @@ export default class Game {
     };
 
     public gameOver() {
-        if (Game.gameTime >= this.gameTickScheduler.getLastTime()
-            && this.playerController.getPlayers().every(p => p.isDead())) {
+        console.log(this.gameTickScheduler.getLastTime());
+        if (Game.gameTime <= this.gameTickScheduler.getLastTime()
+            || this.playerController.getPlayers().every(p => p.isDead())) {
             this.gameStop();
             this.gameState = "ending";
+            return true;
         }
+        return false;
     }
 
     public render(): GameStateDto {
