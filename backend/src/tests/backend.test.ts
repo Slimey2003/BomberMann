@@ -52,9 +52,22 @@ describe("Game", () => {
     it("running", () => {
         expect(game?.isRunning()).toBe(true);
     });
-    it("ending", () => {
-        game?.gameStop();
-        expect(game?.isRunning()).toBe(false);
+    it("ending after Player isDead", () => {
+        if (!game) return;
+        for(const player of game.getPlayerController().getPlayers()) {
+            const bomb: Bomb = new Bomb(0, player.getPosition());
+            const explode = game.getBombController().modifyBomb(bomb);
+            for (let i = 0; i < 3; i++) {
+                game.getPlayerController().playerTakeDamage(bomb.getPosition(), explode.getCalculatedRange());
+            }
+        }
+        vi.advanceTimersByTime(250);
+        expect(game.isRunning()).toBe(false);
+    });
+    it("ending after Time", () => {
+        if (!game) return;
+        vi.advanceTimersByTime(600_250);
+        expect(game.isRunning()).toBe(false);
     });
     it("ticks", () => {
         if (!game) return;
