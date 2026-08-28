@@ -28,7 +28,7 @@ describe("Game", () => {
                 "performance",
             ],
         });
-        game = new Game(['player1', 'player2'], 19, 15);
+        game = Game.generateBasisGame();
         game.gameStart();
     });
 

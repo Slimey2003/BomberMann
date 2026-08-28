@@ -15,9 +15,9 @@ export default class Game {
     private static blockProbability: number = 0.6;
     private static playerLives: number = 3;
     private static gameTickPerSec: number = 4;
-    private static gameTime: number = 600_000; //10 Min
+    private static gameTime: number = 600_000;//10 Min
 
-
+    private gameState: "config" | "running" | "ending" = "config";
 
     private gameTickScheduler: GameTickScheduler;
     private wallController: WallController;
@@ -37,6 +37,9 @@ export default class Game {
         this.effectController.init(this.wallController, this.playerController, this.bombController, this.effectController);
     }
 
+    static generateBasisGame() {
+        return new Game(["Spieler1", "Spieler2"], 19, 15);
+    }
 
     public getWallController() {
         return this.wallController;
@@ -56,6 +59,7 @@ export default class Game {
 
     public gameStart() {
         this.gameTickScheduler.start(this.tick);
+        this.gameState = "running";
     }
 
     public isRunning(): boolean {
@@ -83,6 +87,14 @@ export default class Game {
             bController.triggerExplodeTimeDown();
         }
     };
+
+    public gameOver() {
+        if (Game.gameTime >= this.gameTickScheduler.getLastTime()
+            && this.playerController.getPlayers().every(p => p.isDead())) {
+            this.gameStop();
+            this.gameState = "ending";
+        }
+    }
 
     public render(): GameStateDto {
         const walls: Map<string, Wall> = this.wallController.getWalls();
@@ -139,7 +151,7 @@ export default class Game {
         });
 
         return {
-            type: "running",
+            type: this.gameState,
             gameTime: Game.gameTime,
             timeLeft: this.gameTickScheduler.getLastTime(),
             players: playerDtos,
