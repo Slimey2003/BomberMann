@@ -1,6 +1,6 @@
 import Controller from "../Controller";
 import type Player from "../moveable/Player";
-import type Vector from "../utils/Vector";
+import type Vector from "@project/utils/Vector";
 import EffectCard from "./EffectCard";
 
 export default class EffectController extends Controller {

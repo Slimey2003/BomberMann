@@ -1,6 +1,6 @@
 import Vector from "./Vector";
 
-export class Direction {
+export default class Direction {
     static NORTH = new Direction("NORTH", 0, -1);
     static EAST = new Direction("EAST", 1, 0);
     static SOUTH = new Direction("SOUTH", 0, 1);

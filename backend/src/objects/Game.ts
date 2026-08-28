@@ -3,11 +3,20 @@ import PlayerController from "./moveable/PlayerController";
 import BombController from "./moveable/BombController";
 import EffectController from "./effect/EffectController";
 import GameTickScheduler from "./GameTickScheduler";
+import type Wall from "./wall/Wall";
+import type Player from "./moveable/Player";
+import type EffectCard from "./effect/EffectCard";
+import type Bomb from "./moveable/Bombs";
+import type ExplodeBomb from "./moveable/ExplodeBomb";
+import type { BombDto, EffectDto, GameStateDto, PlayerDto, WallDto } from "@project/utils";
+import BreakableWall from "./wall/BreakableWall";
 
 export default class Game {
     private static blockProbability: number = 0.6;
     private static playerLives: number = 3;
     private static gameTickPerSec: number = 4;
+    private static gameTime: number = 600_000; //10 Min
+
 
 
     private gameTickScheduler: GameTickScheduler;
@@ -49,17 +58,22 @@ export default class Game {
         this.gameTickScheduler.start(this.tick);
     }
 
+    public isRunning(): boolean {
+        return this.gameTickScheduler.isRunning()
+    }
+
     public gameStop() {
         this.gameTickScheduler.stop();
     }
 
 
-    public tick(deltaTime: number, counter: number): void {
+    public tick = (deltaTime: number, counter: number): void => {
         const pController = this.getPlayerController();
         const bController = this.getBombController();
+
         if (counter % 2 === 0) {
             pController.updateMovement();
-            bController.playerCollidedWithBomb(true);
+            bController.playerCollidedWithBomb(false);
             bController.updateMovement();
         }
 
@@ -67,6 +81,71 @@ export default class Game {
             bController.triggerExplosion();
             bController.triggerExplodeTick();
             bController.triggerExplodeTimeDown();
+        }
+    };
+
+    public render(): GameStateDto {
+        const walls: Map<string, Wall> = this.wallController.getWalls();
+        const players: Player[] = this.playerController.getPlayers();
+        const placedBombs: Bomb[] = this.bombController.getPlacedBombs();
+        const explodeBombs: ExplodeBomb[] = this.bombController.getExplodeBombs();
+        const effects: EffectCard[] = this.effectController.getEffectController().getEffects();
+
+        const wallDtos: WallDto[] = [...walls.values()].map(w => {
+            return {
+                pos: w.getPosition(),
+                breakable: w instanceof BreakableWall,
+                box: w.getBox()
+            };
+        });
+
+        const playerDtos: PlayerDto[] = players.map(p => {
+            return {
+                id: p.getId(),
+                name: p.getName(),
+                pos: p.getPosition(),
+                box: p.getBox(),
+                lives: p.getLives(),
+                dead: p.isDead()
+            }
+        });
+
+        const bombsDtos: BombDto[] = placedBombs.map(b => {
+            return {
+                id: b.getId(),
+                pos: b.getPosition(),
+                box: b.getBox(),
+                explode: []
+            }
+        });
+             
+        bombsDtos.push(...
+            explodeBombs.map(b => {
+                return {
+                    id: b.getBomb().getId(),
+                    pos: b.getBomb().getPosition(),
+                    box: b.getBomb().getBox(),
+                    explode: b.getCalculatedRange()
+                }
+            })
+        )
+
+        const effectDtos: EffectDto[] = effects.map(e => {
+            return {
+                pos: e.getPosition(),
+                effect: e.getEffectId(),
+                box: e.getBox()
+            }
+        });
+
+        return {
+            type: "running",
+            gameTime: Game.gameTime,
+            timeLeft: this.gameTickScheduler.getLastTime(),
+            players: playerDtos,
+            bombs: bombsDtos,
+            walls: wallDtos,
+            effects: effectDtos
         }
     }
     

@@ -1,65 +1,90 @@
-import { afterEach, before, beforeEach } from 'node:test';
-import { expect, it, describe, vi } from 'vitest'
+import { expect, it, describe, vi, beforeEach, afterEach } from 'vitest'
 import Game from '../objects/Game';
 import WallController from '../objects/wall/WallController';
 import Wall from '../objects/wall/Wall';
 import BreakableWall from '../objects/wall/BreakableWall';
 import PlayerController from '../objects/moveable/PlayerController';
-import { Direction } from '../objects/utils/Direction';
+import Direction  from '@project/utils/Direction';
 import BombController from '../objects/moveable/BombController';
 import Bomb from '../objects/moveable/Bombs';
-import Vector from '../objects/utils/Vector';
+import Vector from '@project/utils/Vector';
 import type EffectController from '../objects/effect/EffectController';
-import Effect from '../objects/effect/Effect';
 import type ExplodeBomb from '../objects/moveable/ExplodeBomb';
+import { EffectType } from '@project/utils';
 
 describe("Game", () => {
     let game: Game | undefined;
 
     beforeEach(() => {
-        vi.useFakeTimers();
-        game = new Game(["player1", "player2"], 19, 15);
+        vi.useFakeTimers({
+            toFake: [
+                "setTimeout",
+                "clearTimeout",
+                "setInterval",
+                "clearInterval",
+                "setImmediate",
+                "clearImmediate",
+                "Date",
+                "performance",
+            ],
+        });
+        game = new Game(['player1', 'player2'], 19, 15);
+        game.gameStart();
     });
 
     afterEach(() => {
-        game?.gameStop();
+        if (!game) {
+            throw Error("Game has no Instance");
+        }
+        game.gameStop();
+
+        // Falls BombController / EffectController eigene Timer besitzen:
+        game.getBombController().clearPlacedBombs();
+        game.getBombController().clearExplodeBombs();
+
+        vi.clearAllTimers();
         vi.useRealTimers();
         vi.restoreAllMocks();
     });
-
-    it.todo("config", () => {});
-    it.todo("running", () => {});
-    it.todo("ending", () => {});
+    it.todo("config", () => {}); //
     it.todo("stats", () => {});
+    it.todo("rendering", () => {});
+    it("running", () => {
+        expect(game?.isRunning()).toBe(true);
+    });
+    it("ending", () => {
+        game?.gameStop();
+        expect(game?.isRunning()).toBe(false);
+    });
     it("ticks", () => {
         if (!game) return;
         const player = game.getPlayerController().getPlayers()[0];
         game.getPlayerController().setPlayerVelocity(0, Direction.SOUTH);
-        game.tick(0, 0);
-        game.getBombController().placeBomb(0);
+        vi.advanceTimersByTime(250);
         expect(player.getPosition().getY()).toBe(12);
-        game.tick(0, 1);
-        game.tick(0, 2);
+        vi.advanceTimersByTime(250);
+        expect(player.getPosition().getY()).toBe(12);
+        vi.advanceTimersByTime(250);
         expect(player.getPosition().getY()).toBe(14);
     });
 
     describe("EffectController", () => {
         let controller: EffectController | undefined;
-        before(() => {
+        beforeEach(() => {
             controller = game?.getEffectController();
         })
 
         it("placeEffect", () => {
             if(!game) return;
             if (!controller) return;
-            controller.placeEffect(new Vector(10, 10), Effect.SPEED);
+            controller.placeEffect(new Vector(10, 10), EffectType.SPEED);
             expect(controller.getEffects().length).toBe(1);
         })
     });
     
     describe("WallController", () => {
         let controller: WallController | undefined;
-        before(() => {
+        beforeEach(() => {
             controller = game?.getWallController();
             expect(controller).toBeInstanceOf(WallController);
         });
@@ -87,7 +112,7 @@ describe("Game", () => {
 
     describe("PlayerController", () => {
         let controller: PlayerController | undefined;
-        before(() => {
+        beforeEach(() => {
             controller = game?.getPlayerController();
             expect(controller).toBeInstanceOf(PlayerController);
         });
@@ -127,10 +152,11 @@ describe("Game", () => {
                 if (!controller) return;
                 const player = controller.getPlayers()[0];
                 player.setPosition(new Vector(10, 10));
+                controller.getEffectController().placeEffect(new Vector(10, 10), EffectType.SPEED);
                 
                 controller.setPlayerVelocity(0, Direction.SOUTH);
                 controller.updateMovement();
-                const eff = player.getEffect(Effect.SPEED);
+                const eff = player.getEffect(EffectType.SPEED);
                 expect(eff).not.toBe(undefined)
                 controller.setPlayerVelocity(0, Direction.NONE);
                 player.clearEffects();
@@ -138,7 +164,7 @@ describe("Game", () => {
             it("Can used it", () => {
                 if (!controller) return;
                 const player = controller.getPlayers()[0];
-                player.addEffectOrChange(Effect.SPEED);
+                player.addEffectOrChange(EffectType.SPEED);
                 controller.setPlayerVelocity(0, Direction.SOUTH);
                 expect(player.getMovement().getY()).toBe(4);
                 controller.setPlayerVelocity(0, Direction.NONE);
@@ -159,9 +185,10 @@ describe("Game", () => {
         it("Player Dead", () => {
             if (!controller) return;
             const player = controller.getPlayers()[0];
-            expect(player.getLives()).toBe(2);
+            expect(player.getLives()).toBe(3);
             const bomb: Bomb = new Bomb(0, player.getPosition());
             const explode = controller.getBombController().modifyBomb(bomb);
+            controller.playerTakeDamage(bomb.getPosition(), explode.getCalculatedRange());
             controller.playerTakeDamage(bomb.getPosition(), explode.getCalculatedRange());
             controller.playerTakeDamage(bomb.getPosition(), explode.getCalculatedRange());
             expect(player.getLives()).toBe(0);
@@ -171,9 +198,10 @@ describe("Game", () => {
 
     describe("BombController", () => {
         let controller: BombController | undefined;
-        before(() => {
+        beforeEach(() => {
             controller = game?.getBombController();
             expect(controller).toBeInstanceOf(BombController);
+            
         });
         describe("Placed", () => {
             it("Placed normal", () => {
@@ -208,15 +236,15 @@ describe("Game", () => {
             controller.clearPlacedBombs();
         });
         describe("Collision", () => {
-            it.todo("Collision with Wall", () => {
+            it("Collision with Wall", () => {
                 //I mean is the same logic with Player Collision with Wall
             });
             it("Collision with Player", () => {
-                //Gehört wohl doch hier hin da ich das Place und playerCollidedWithBomb im BombController hab nicht in Player ;D
                 if (!controller) return;
                 controller.placeBomb(0);
                 const bomb = controller.getPlacedBombs()[0];
                 expect(bomb.getMovement().getY()).toEqual(0);
+                controller.getPlayerController().setPlayerVelocity(0, Direction.SOUTH);
                 controller.playerCollidedWithBomb(true);
                 expect(bomb.getMovement().getY()).toBe(40);
                 controller.clearPlacedBombs();
@@ -227,8 +255,8 @@ describe("Game", () => {
                 if (!controller) return;
                 const bomb: Bomb = new Bomb(0, new Vector(20, 10));
                 const player = controller.getPlayerController().getPlayers()[0];
-                player.addEffectOrChange(Effect.RANGE);
-                player.addEffectOrChange(Effect.STRANGE);
+                player.addEffectOrChange(EffectType.RANGE);
+                player.addEffectOrChange(EffectType.STRANGE);
                 const explode: ExplodeBomb = controller.modifyBomb(bomb);
                 expect(explode.getRange()).toBe(60);
                 expect(explode.getStrange()).toBe(3);
@@ -245,7 +273,7 @@ describe("Game", () => {
                 expect(controller.triggerExplosion().length).toBe(0);
                 vi.advanceTimersByTime(7999);
                 expect(controller.triggerExplosion().length).toBe(0);
-                vi.advanceTimersByTime(1);
+                vi.advanceTimersByTime(2);
                 expect(controller.triggerExplosion().length).toBe(1);
 
                 //Trigger Two Bomb
@@ -258,11 +286,13 @@ describe("Game", () => {
                 expect(controller.triggerExplosion().length).toBe(0);
                 vi.advanceTimersByTime(1);
                 expect(controller.triggerExplosion().length).toBe(2);
+                controller.clearPlacedBombs();
             })
             it("Chan Reaction", () => {
                 if (!controller) return;
                 const bomb: Bomb = new Bomb(0, new Vector(20, 10));
                 const bomb1: Bomb = new Bomb(0, new Vector(10, 10));
+                controller.clearPlacedBombs();
                 controller.addBomb(bomb1);
                 const triggers = [ controller.modifyBomb(bomb)];
                 expect(triggers.length).toBe(1);

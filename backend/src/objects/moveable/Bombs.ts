@@ -1,17 +1,25 @@
 import type { Delayed } from "../utils/DelayedQueue";
-import type Vector from "../utils/Vector";
+import type Vector from "@project/utils/Vector";
 import Moveable from "./Moveable";
+import { randomUUID } from "node:crypto";
 
 export default class Bomb extends Moveable implements Delayed {
-    private static EXPOSITION_EXPIRATION: number = 8000; //sec
-    private static PROTECTION_TIME: number = 2000; //sec
+    private static EXPOSITION_EXPIRATION: number = 8000; //8 sec
+    private static PROTECTION_TIME: number = 2000; //2 sec
+    private id: string;
     private playerId: number;
     private placeTime: number;
+    
 
     constructor(playerId: number, startPosition: Vector) {
         super(startPosition, 4, 4); //4 für die Breite und Höhe
         this.placeTime = performance.now();
         this.playerId = playerId;
+        this.id = randomUUID();
+    }
+
+    public getId(): string {
+        return this.id;
     }
 
     public getPlayerId(): number {
@@ -23,7 +31,7 @@ export default class Bomb extends Moveable implements Delayed {
     }
 
     public noCollision(): boolean {
-        return ((this.placeTime + Bomb.PROTECTION_TIME) - Date.now()) > 0;
+        return ((this.placeTime + Bomb.PROTECTION_TIME) - performance.now()) <= 0;
     }
 
     public getDelay(): number {

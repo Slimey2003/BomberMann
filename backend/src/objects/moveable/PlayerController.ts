@@ -1,6 +1,6 @@
 import Controller from "../Controller";
-import type { Direction } from "../utils/Direction";
-import Vector from "../utils/Vector";
+import type Direction from "@project/utils/Direction";
+import Vector from "@project/utils/Vector";
 import type Wall from "../wall/Wall";
 import Player from "./Player";
 

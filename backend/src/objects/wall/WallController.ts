@@ -1,8 +1,8 @@
-import { Direction } from "../utils/Direction";
-import Vector from "../utils/Vector";
+import Direction from "@project/utils/Direction";
+import Vector from "@project/utils/Vector";
 import BreakableWall from "./BreakableWall";
 import Wall from "./Wall";
-import type BoundingBox from "../utils/BoundingBox";
+import type BoundingBox from "@project/utils/BoundingBox";
 
 export default class WallController {
     private height: number;

@@ -1,4 +1,5 @@
 export interface Delayed {
+    getId(): string;
     getDelay(): number;
 }
 
@@ -19,7 +20,7 @@ export default class DelayQueue<T extends Delayed> {
     }
 
     public delete(element: T) {
-        this.elements = this.elements.filter(e => e !== element);
+        this.elements = this.elements.filter(e => element.getId() != e.getId());
     }
 
     public clear() {
@@ -30,7 +31,6 @@ export default class DelayQueue<T extends Delayed> {
         if (this.elements.length === 0) {
             return undefined;
         }
-
         if (this.elements[0].getDelay() <= 0) {
             return this.elements.shift();
         }

@@ -1,5 +1,5 @@
 import type { Delayed } from "../utils/DelayedQueue";
-import type Vector from "../utils/Vector";
+import type Vector from "@project/utils/Vector";
 import type Bomb from "./Bombs";
 
 export default class ExplodeBomb implements Delayed {
@@ -16,6 +16,10 @@ export default class ExplodeBomb implements Delayed {
     constructor(bomb: Bomb) {
         this.bomb = bomb;
         this.explodeTime = performance.now();
+    }
+
+    public getId(): string {
+        return this.bomb.getId();
     }
 
     public getBomb() {
