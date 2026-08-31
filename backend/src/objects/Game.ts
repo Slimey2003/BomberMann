@@ -92,7 +92,7 @@ export default class Game {
 
     public gameOver() {
         console.log(this.gameTickScheduler.getLastTime());
-        if (Game.gameTime <= this.gameTickScheduler.getLastTime()
+        if (Game.gameTime <= this.gameTickScheduler.getLastTime() //NOTE: getLastTime ist performance.now -> ms seit dem start des processes -> wird bei neuen games nicht resettet
             || this.playerController.getPlayers().every(p => p.isDead())) {
             this.gameStop();
             this.gameState = "ending";
@@ -102,11 +102,11 @@ export default class Game {
     }
 
     public render(): GameStateDto {
-        const walls: Map<string, Wall> = this.wallController.getWalls();
+        const walls: Map<string, Wall> = this.wallController.getWalls(); //NOTE: walls als Map etwas overkill oder? 🤔 Array wäre einfacher oder?
         const players: Player[] = this.playerController.getPlayers();
         const placedBombs: Bomb[] = this.bombController.getPlacedBombs();
         const explodeBombs: ExplodeBomb[] = this.bombController.getExplodeBombs();
-        const effects: EffectCard[] = this.effectController.getEffectController().getEffects();
+        const effects: EffectCard[] = this.effectController.getEffectController().getEffects(); //NOTE: denke mal den effectController stop braucshte nicht
 
         const wallDtos: WallDto[] = [...walls.values()].map(w => {
             return {
