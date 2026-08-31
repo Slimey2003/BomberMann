@@ -34,6 +34,6 @@ export default class Effect {
     }
 
     public addScale() {
-        this.scale * this.multipleScale;
+        this.scale * this.multipleScale; //NOTE: hier fehlt assignment
     }
 }

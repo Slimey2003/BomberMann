@@ -15,6 +15,7 @@ export default class EffectController extends Controller {
         for (const eff of this.effectsCards) {
             if (player.getBox().overlaps(eff.getBox())) {
                 player.addEffectOrChange(eff.getEffectId());
+                //NOTE: pickup wird nicht entfernt
             }
         }
     }
