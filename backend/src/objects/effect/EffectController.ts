@@ -12,12 +12,13 @@ export default class EffectController extends Controller {
     }
 
     public pickUp(player: Player) {
-        for (const eff of this.effectsCards) {
-            if (player.getBox().overlaps(eff.getBox())) {
-                player.addEffectOrChange(eff.getEffectId());
-                //NOTE: pickup wird nicht entfernt
+        this.effectsCards = this.effectsCards.filter(c => {
+            if (player.getBox().overlaps(c.getBox())) {
+                player.addEffectOrChange(c.getEffectId());
+                return false;
             }
-        }
+            return true;
+        });
     }
 
     public getEffects(): EffectCard[] {

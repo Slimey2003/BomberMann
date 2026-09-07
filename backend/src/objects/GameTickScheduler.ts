@@ -20,7 +20,7 @@ export default class GameTickScheduler {
         }
 
         this.execute = run;
-        this.lastTime = performance.now();
+        this.lastTime = Date.now();
         this.tickCounter = 0;
 
         this.intervalId = setInterval(() => this.loop(), this.tickRate);
@@ -44,7 +44,7 @@ export default class GameTickScheduler {
     }
 
     private loop(): void {
-        const currentTime = performance.now();
+        const currentTime = Date.now();
         const deltaTime = currentTime - this.lastTime;
 
         this.execute(deltaTime, this.tickCounter);
