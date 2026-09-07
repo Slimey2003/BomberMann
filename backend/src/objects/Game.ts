@@ -92,7 +92,7 @@ export default class Game {
 
     public gameOver() {
         console.log(this.gameTickScheduler.getLastTime());
-        if (Game.gameTime <= this.gameTickScheduler.getLastTime()
+        if (Game.gameTime <= (this.gameTickScheduler.getLastTime() - Date.now())
             || this.playerController.getPlayers().every(p => p.isDead())) {
             this.gameStop();
             this.gameState = "ending";
