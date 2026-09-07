@@ -13,11 +13,11 @@ export default class BoundingBox {
     constructor(center: Vector, height: number, width: number) {
         this.height = height;
         this.width = width;
-        const halfHeight = height / 2;
-        const halfWidth = width / 2;
+        const halfHeight = this.height / 2;
+        const halfWidth = this.width / 2;
+        
         this.minX = center.getX() - halfWidth;
         this.maxX = center.getX() + halfWidth;
-
         this.minY = center.getY() - halfHeight;
         this.maxY = center.getY() + halfHeight;
     }
@@ -55,27 +55,23 @@ export default class BoundingBox {
     }
 
     public contains(vector: Vector): boolean {
-        return vector.getX() >= this.minX &&
-               vector.getX() <= this.maxX &&
-               vector.getY() >= this.minY &&
-               vector.getY() <= this.maxY;
+        return vector.getX() > this.minX &&
+               vector.getX() < this.maxX &&
+               vector.getY() > this.minY &&
+               vector.getY() < this.maxY;
     }
     
     public overlaps(box: BoundingBox): boolean {
-        return this.minX <= box.getMaxX() &&
-               this.maxX >= box.getMinX() &&
-               this.minY <= box.getMaxY() &&
-               this.maxY >= box.getMinY();
+        return this.minX < box.getMaxX() &&
+               this.maxX > box.getMinX() &&
+               this.minY < box.getMaxY() &&
+               this.maxY > box.getMinY();
     }
 
     /**
      * Use Liang-Barsky-Algorithmus
      */
     public intersects(start: Vector, end: Vector): number | null {
-        if (this.contains(start) || this.contains(end)) {
-            return 0.0;
-        }
-
         const dx = end.getX() - start.getX();
         const dy = end.getY() - start.getY();
 

@@ -54,7 +54,7 @@ describe("Game", () => {
     it("ending after Player isDead", () => {
         if (!game) return;
         for(const player of game.getPlayerController().getPlayers()) {
-            const bomb: Bomb = new Bomb(0, player.getPosition());
+            const bomb: Bomb = new Bomb(0, player.getPosition(), 50, 50);
             const explode = game.getBombController().modifyBomb(bomb);
             for (let i = 0; i < 3; i++) {
                 game.getPlayerController().playerTakeDamage(bomb.getPosition(), explode.getCalculatedRange());
@@ -90,7 +90,7 @@ describe("Game", () => {
             if(!game) return;
             if (!controller) return;
             controller.placeEffect(new Vector(10, 10), EffectType.SPEED);
-            expect(controller.getEffects().length).toBe(1);
+            expect(controller.getEffectCards().length).toBe(1);
         })
     });
     
@@ -188,7 +188,7 @@ describe("Game", () => {
             if (!controller) return;
             const player = controller.getPlayers()[0];
             expect(player.getLives()).toBe(3);
-            const bomb: Bomb = new Bomb(0, player.getPosition());
+            const bomb: Bomb = new Bomb(0, player.getPosition(), 50, 50);
             const explode = controller.getBombController().modifyBomb(bomb);
             controller.playerTakeDamage(bomb.getPosition(), explode.getCalculatedRange());
             expect(player.getLives()).toBe(2);
@@ -198,7 +198,7 @@ describe("Game", () => {
             if (!controller) return;
             const player = controller.getPlayers()[0];
             expect(player.getLives()).toBe(3);
-            const bomb: Bomb = new Bomb(0, player.getPosition());
+            const bomb: Bomb = new Bomb(0, player.getPosition(), 50, 50);
             const explode = controller.getBombController().modifyBomb(bomb);
             controller.playerTakeDamage(bomb.getPosition(), explode.getCalculatedRange());
             controller.playerTakeDamage(bomb.getPosition(), explode.getCalculatedRange());
@@ -240,7 +240,7 @@ describe("Game", () => {
             const bomb = controller.getPlacedBombs()[0];
             const posBefore = bomb.getPosition();
             expect(bomb.getMovement().getY()).toEqual(0);
-            controller.playerCollidedWithBomb(true);
+            controller.playerCollidedWithBomb();
             expect(bomb.getMovement().getY()).toBe(40);
             controller.updateMovement();
             expect(bomb.getMovement().getY()).toBe(0);
@@ -257,7 +257,7 @@ describe("Game", () => {
                 const bomb = controller.getPlacedBombs()[0];
                 expect(bomb.getMovement().getY()).toEqual(0);
                 controller.getPlayerController().setPlayerVelocity(0, Direction.SOUTH);
-                controller.playerCollidedWithBomb(true);
+                controller.playerCollidedWithBomb();
                 expect(bomb.getMovement().getY()).toBe(40);
                 controller.clearPlacedBombs();
             });
@@ -265,7 +265,7 @@ describe("Game", () => {
         describe("Effects", () => {
             it("Can used it", () => {
                 if (!controller) return;
-                const bomb: Bomb = new Bomb(0, new Vector(20, 10));
+                const bomb: Bomb = new Bomb(0, new Vector(20, 10), 50, 50);
                 const player = controller.getPlayerController().getPlayers()[0];
                 player.addEffectOrChange(EffectType.RANGE);
                 player.addEffectOrChange(EffectType.STRANGE);
@@ -302,8 +302,8 @@ describe("Game", () => {
             })
             it("Chan Reaction", () => {
                 if (!controller) return;
-                const bomb: Bomb = new Bomb(0, new Vector(20, 10));
-                const bomb1: Bomb = new Bomb(0, new Vector(10, 10));
+                const bomb: Bomb = new Bomb(0, new Vector(20, 10), 50, 50);
+                const bomb1: Bomb = new Bomb(0, new Vector(10, 10), 50, 50);
                 controller.clearPlacedBombs();
                 controller.addBomb(bomb1);
                 const triggers = [ controller.modifyBomb(bomb)];
