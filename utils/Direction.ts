@@ -19,7 +19,7 @@ export default class Direction {
         Object.freeze(this);
     }
 
-    public static fromKey(key: string): Direction | undefined {
+    public static fromKey(key: string): Direction {
         switch (key.toLowerCase()) {
             case "w":
             case "W":
