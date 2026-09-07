@@ -47,12 +47,13 @@ export default class WallController {
     }
 
     public expositionOnVector(strange: number, vec: Vector): number | undefined {
-        const wall = this.walls.get(vec.toHashKey());
+        const hashKey = vec.toHashKey();
+        const wall = this.walls.get(hashKey);
         if (!wall) return undefined;
         if (wall instanceof BreakableWall) {
             wall.addDamage(strange);
             if (wall.isDestroyed()) {
-                this.walls.delete(vec.toHashKey());
+                this.walls.delete(hashKey);
                 return wall.getEffect();
             }
         }
@@ -73,10 +74,10 @@ export default class WallController {
             const wall =  this.walls.get(vec.toHashKey());
             if (!wall) {
                 vecRange = vec;
-            } else if (this.walls.get(vec.toHashKey()) instanceof BreakableWall) {
+            } else if (wall instanceof BreakableWall) {
                 vecRange = vec;
                 break;
-            } else if (this.walls.get(vec.toHashKey())) break;
+            } else if (wall) break;
         }
         return vecRange;
     }
@@ -86,9 +87,9 @@ export default class WallController {
         const yLast = this.height - 1;
         for (let y = 0; y < this.height; y++) {
             for (let x = 0; x < this.width; x++) {
-                if ((x === 0 || x === xLast ||  y === 0 ||  y === yLast) || 
+                if ((x === 0 || x === xLast ||  y === 0 ||  y === yLast) ||
                     (x % 2 === 0 && y % 2 === 0)) {
-                        const pos = new Vector(x * 10, y * 10); 
+                        const pos = new Vector(x * 10, y * 10);
                         this.walls.set(pos.toHashKey(), new Wall(`${x}-${y}`, pos));
                 }
             }

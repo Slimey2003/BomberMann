@@ -24,8 +24,7 @@ describe("Game", () => {
                 "clearInterval",
                 "setImmediate",
                 "clearImmediate",
-                "Date",
-                "performance",
+                "Date"
             ],
         });
         game = Game.generateBasisGame();

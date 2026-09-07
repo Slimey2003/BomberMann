@@ -92,7 +92,7 @@ export default class Game {
 
     public gameOver() {
         console.log(this.gameTickScheduler.getLastTime());
-        if (Game.gameTime <= this.gameTickScheduler.getLastTime() //NOTE: getLastTime ist performance.now -> ms seit dem start des processes -> wird bei neuen games nicht resettet
+        if (Game.gameTime <= this.gameTickScheduler.getLastTime()
             || this.playerController.getPlayers().every(p => p.isDead())) {
             this.gameStop();
             this.gameState = "ending";
