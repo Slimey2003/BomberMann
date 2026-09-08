@@ -1,27 +1,33 @@
 import { EffectType } from "@project/utils";
 
 export default class Effect {
-    static SPEED_SCALE_MULTIPLE = 2;
-    static STRANGE_SCALE_MULTIPLE = 2;
-    static RANGE_SCALE_MULTIPLE = 2;
+    private static SPEED = {step: 1, max: 10, default: 2};
+    private static STACK = {step: 1, max: 3, default: 1};
+    private static STRANGE = {step: 1, max: 3, default: 1};
+    private static RANGE = {step: 1, max: 3, default: 1};
 
     private id: number;
-    private scale: number = 2;
-    private multipleScale: number;
+    private scale: number;
+    private stepScale: number;
+    private stepMax: number;
 
-    constructor(id: number, multipleScale: number) {
+    constructor(id: number, scale: {step: number, max: number, default: number}) {
         this.id = id;
-        this.multipleScale = multipleScale;
+        this.scale = scale.default;
+        this.stepScale = scale.step;
+        this.stepMax = scale.max;
     }
 
     public static getEffectById(id: number): Effect | undefined {
         switch(id) {
             case EffectType.SPEED:
-                return new Effect(id, Effect.SPEED_SCALE_MULTIPLE);
+                return new Effect(id, Effect.SPEED);
             case EffectType.STRANGE:
-                return new Effect(id, Effect.STRANGE_SCALE_MULTIPLE);
+                return new Effect(id, Effect.STRANGE);
             case EffectType.RANGE:
-                return new Effect(id, Effect.RANGE_SCALE_MULTIPLE);
+                return new Effect(id, Effect.RANGE);
+            case EffectType.STACK:
+                return new Effect(id, Effect.STACK);
         }
     }
 
@@ -34,6 +40,7 @@ export default class Effect {
     }
 
     public addScale() {
-        this.scale *= this.multipleScale;
+        if (this.scale >= this.stepMax) return;
+        this.scale += this.stepScale;
     }
 }

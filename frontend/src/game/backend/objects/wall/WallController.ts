@@ -67,8 +67,9 @@ export default class WallController {
 
     public calculateRange(pos: Vector, range: number, dir: Direction): Vector {
         const rangeVectors: Vector[] = [];
-        for (let i = 5; i <= range; i += 5) {
-            rangeVectors.push(pos.add(dir.getVector().scale(i)));
+        for (let i = 1; i <= range; i++) {
+            const distanceInPixels = i * (this.canvas.wallSize);
+            rangeVectors.push(pos.add(dir.getVector().scale(distanceInPixels)));
         }
         
         let vecRange: Vector = new Vector(0, 0);

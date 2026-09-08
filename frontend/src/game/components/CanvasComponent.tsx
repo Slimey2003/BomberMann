@@ -2,6 +2,7 @@ import type { GameStateDto } from "@project/utils";
 import { useEffect, useRef } from "react";
 import Game from "../backend/objects/Game";
 import Direction from "@project/utils/Direction";
+import PlayerInputController from "../backend/objects/PlayerInputController";
 
 const imageCache: {[key: string]: HTMLImageElement} = {};
 let backgroundPatternCache: CanvasPattern | null = null;
@@ -27,38 +28,25 @@ export default function Canvas() {
         
         const logicalWidth = 975;
         const logicalHeight = 975;
-        const dpr = window.devicePixelRatio || 1;
-        
-        canvas.width = logicalWidth * dpr;
-        canvas.height = logicalHeight * dpr;
-        
-        canvas.style.width = logicalWidth + "px";
-        canvas.style.height = logicalHeight + "px";
         
         const ctx = canvas.getContext("2d");
         if (ctx == null) return;
-        
-        ctx.scale(dpr, dpr);
-        ctx.imageSmoothingEnabled = false;
+
+        const inputController = new PlayerInputController(0);
 
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (!e.key) {
-                return;
-            }
-            const dir: Direction = Direction.fromKey(e.key);
-            if (dir === Direction.NONE) {
-                if (e.key === " ") {
-                    e.preventDefault();
-                    game.getBombController().placeBomb(0);
-                }
-                return;
+            if (!e.key) return;
+            if (e.key === " ") {
+                e.preventDefault();
+                game.getBombController().placeBomb(0);
             }
             e.preventDefault();
-            game.getPlayerController().setPlayerVelocity(0, dir);
+            inputController.addKey(e.key);
         };
 
-        const handleKeyUp = () => {
-            game.getPlayerController().setPlayerVelocity(0, Direction.NONE);
+        const handleKeyUp = (e: KeyboardEvent) => {
+            if (!e.key) return;
+            inputController.removeKey(e.key);
         };
         window.addEventListener("keydown", handleKeyDown);
         window.addEventListener("keyup", handleKeyUp);
@@ -68,6 +56,7 @@ export default function Canvas() {
 
         const loop = () => {
             ctx.clearRect(0, 0, logicalWidth, logicalHeight);
+            game.getPlayerController().setPlayerVelocity(0, inputController.getLastDirection());
             render(game.render(), ctx, logicalWidth, logicalHeight);
             animationFrameId = requestAnimationFrame(loop);
         };
@@ -110,14 +99,23 @@ function render(gameState: GameStateDto, ctx: CanvasRenderingContext2D, width: n
     }
 
     for (const wall of gameState.walls) {
-        const wallImg = getImage(wall.breakable ? "breakableWall" : "soildWall");
+        let imageName = "soildWall";
+        if (wall.breakable && wall.resistance !== undefined) {
+            const currentDamage = wall.damage || 0;
+            let remainingResistance = Math.max(0, wall.resistance - currentDamage);
+            if (remainingResistance === 1) remainingResistance = 0; 
+            imageName = "breakableWall_" + remainingResistance;
+        }
+
+        const wallImg = getImage(imageName);
+        
         if (wallImg.complete && wallImg.naturalHeight !== 0) {
             ctx.drawImage(
                 wallImg,
-                wall.box.getMinX(),
-                wall.box.getMinY(),
-                wall.box.getWidth(),
-                wall.box.getHeight()
+                Math.round(wall.box.getMinX()),
+                Math.round(wall.box.getMinY()),
+                Math.round(wall.box.getWidth()),
+                Math.round(wall.box.getHeight())
             );
         }
     }
@@ -134,20 +132,7 @@ function render(gameState: GameStateDto, ctx: CanvasRenderingContext2D, width: n
             );
         }
     }
-    
-    for (const bomb of gameState.bombs) {
-        const bombImg = getImage("bomb");
-        if (bombImg.complete && bombImg.naturalHeight !== 0) {
-            ctx.drawImage(
-                bombImg,
-                bomb.box.getMinX(),
-                bomb.box.getMinY(),
-                bomb.box.getWidth(),
-                bomb.box.getHeight()
-            );
-        }
-    }
-    
+
     for (const effect of gameState.effects) {
         const effectImg = getImage("effect_0" + effect.effect);
         if (effectImg.complete && effectImg.naturalHeight !== 0) {
@@ -158,6 +143,84 @@ function render(gameState: GameStateDto, ctx: CanvasRenderingContext2D, width: n
                 effect.box.getWidth(),
                 effect.box.getHeight()
             );
+        }
+    }
+    
+    for (const bomb of gameState.bombs) {
+        if (!bomb.explode || bomb.explode.length === 0) {
+            const bombImg = getImage("bomb");
+            if (bombImg.complete && bombImg.naturalHeight !== 0) {
+                ctx.drawImage(
+                    bombImg,
+                    bomb.box.getMinX(),
+                    bomb.box.getMinY(),
+                    bomb.box.getWidth(),
+                    bomb.box.getHeight()
+                );
+            }
+        } else {
+            const explImg = getImage("explosion");
+            if (explImg.complete && explImg.naturalHeight !== 0) {
+                
+                const size = bomb.box.getWidth();
+                const halfSize = size / 2;
+                const startX = bomb.pos.getX();
+                const startY = bomb.pos.getY();
+
+                ctx.drawImage(
+                    explImg,
+                    Math.round(startX - halfSize),
+                    Math.round(startY - halfSize),
+                    Math.round(size),
+                    Math.round(size)
+                );
+
+                for (const vec of bomb.explode) {
+                    if (vec.getX() === 0 && vec.getY() === 0) {
+                        continue;
+                    }
+
+                    const diffX = vec.getX() - startX;
+                    const diffY = vec.getY() - startY;
+
+                    let drawX = 0;
+                    let drawY = 0;
+                    let drawW = size;
+                    let drawH = size;
+
+                    if (diffX > 0) {
+                        drawX = startX + halfSize;
+                        drawY = startY - halfSize;
+                        drawW = diffX;
+                        drawH = size;
+                    } else if (diffX < 0) {
+                        drawX = vec.getX() - halfSize;
+                        drawY = startY - halfSize;
+                        drawW = Math.abs(diffX);
+                        drawH = size;
+                    } else if (diffY > 0) {
+                        drawX = startX - halfSize;
+                        drawY = startY + halfSize;
+                        drawW = size;
+                        drawH = diffY;
+                    } else if (diffY < 0) {
+                        drawX = startX - halfSize;
+                        drawY = vec.getY() - halfSize;
+                        drawW = size;
+                        drawH = Math.abs(diffY);
+                    }
+
+                    if (drawW > 0 && drawH > 0) {
+                        ctx.drawImage(
+                            explImg,
+                            Math.round(drawX),
+                            Math.round(drawY),
+                            Math.round(drawW),
+                            Math.round(drawH)
+                        );
+                    }
+                }
+            }
         }
     }
 }

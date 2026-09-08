@@ -19,14 +19,20 @@ export default class BombController extends Controller {
 
     public placeBomb(playerId: number) {
         const player = super.getPlayerController().getPlayers()[playerId];
-        
+
         const playerPos = player.getPosition();
         const newBomb = new Bomb(player.getId(), this.modifyPosition(playerPos), this.canvas.bombSize, this.canvas.bombSize);
+        let playerBombCount = 0;
         for (const bomb of this.getPlacedBombs()) {
+            if (bomb.getPlayerId() == playerId) {
+                playerBombCount++;
+            }
             if (newBomb.getBox().overlaps(bomb.getBox())) {
                 return;
             }
         }
+        if (playerBombCount >= player.getMaxPlacedBomb()) return; //Max 
+        
         this.placedBombs.put(newBomb);
     }
 
@@ -53,7 +59,7 @@ export default class BombController extends Controller {
             if (!trigger) break; //(Save is Save xD)
 
             for (const bomb of this.placedBombs.getValues()) {
-                if (bomb.getId() == trigger.getBomb().getId()) continue;
+                if (bomb.getId() == trigger.getBomb().getId() || !bomb.getMovement().equals(Vector.nullVector)) continue;
                 for (const vec of trigger.getCalculatedRange()) {
                     if (bomb.getBox().intersects(trigger.getBomb().getPosition(), vec) != null) {
                         const explode: ExplodeBomb = this.modifyBomb(bomb);
@@ -72,7 +78,7 @@ export default class BombController extends Controller {
 
     public triggerExplodeTick() {
         for (const explode of this.explodeBombs.getValues()) {
-            this.getPlayerController().playerTakeDamage(explode.getBomb().getPosition(), explode.getCalculatedRange());
+            this.getPlayerController().playerTakeDamage(explode.getPlayerTakeDamage(), explode.getBomb().getPosition(), explode.getCalculatedRange());
         }
     }
 
@@ -134,9 +140,12 @@ export default class BombController extends Controller {
         for (const player of super.getPlayerController().getPlayers()) {
             for (const bomb of this.getPlacedBombs()) {
                 if (player.getBox().overlaps(bomb.getBox())) {
-                    const movement = player.getMovement()
-                    if (bomb.noCollision() || movement.equals(Vector.nullVector)) continue;
-                    bomb.setVelocity(movement.normalize().scale(20));
+                    const playerMovement = player.getMovement()
+                    const bombMovement = bomb.getMovement();
+                    if (bomb.noCollision() 
+                        || playerMovement.equals(Vector.nullVector)
+                        || !bombMovement.equals(Vector.nullVector)) continue;
+                    bomb.setVelocity(playerMovement.normalize().scale(20));
                     break;
                 }
             }
@@ -149,6 +158,8 @@ export default class BombController extends Controller {
         const player = this.getPlayerController().getPlayers()[bomb.getPlayerId()];
         const effRange = player.getEffect(EffectType.RANGE);
         const effStrange = player.getEffect(EffectType.STRANGE);
+        bomb.setVelocity(Vector.nullVector);
+        bomb.setPosition(this.modifyPosition(bomb.getPosition()));
         const explode = new ExplodeBomb(bomb);
         if (effRange) {
             explode.addRange(effRange.getScale());
@@ -157,6 +168,7 @@ export default class BombController extends Controller {
             explode.addStrange(effStrange.getScale());
         }
         explode.setCalculatedRange(this.getWallController().getExpositionRange(bomb.getPosition(), explode.getRange()));
+
         return explode;
     }
 

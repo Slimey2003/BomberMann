@@ -38,13 +38,13 @@ export default class Game {
     }
 
     static generateBasisGame(): Game {
-        return new Game(["Spieler1", "Spieler2"], {
+        return new Game(["Spieler1"], {
             height: 1000, 
             width: 1000,
             playerSize: 50, 
             wallSize: 75, 
-            bombSize: 50,
-            effectSize: 50
+            bombSize: 60,
+            effectSize: 60
         });
     }
 
@@ -113,6 +113,15 @@ export default class Game {
         const effects: EffectCard[] = this.effectController.getEffectCards();
 
         const wallDtos: WallDto[] = [...walls.values()].map(w => {
+            if (w instanceof BreakableWall) {
+                return {
+                    pos: w.getPosition(),
+                    breakable: true,
+                    resistance: w.getResistance(),
+                    damage: w.getDamage(),
+                    box: w.getBox()
+                }
+            }
             return {
                 pos: w.getPosition(),
                 breakable: w instanceof BreakableWall,

@@ -1,6 +1,7 @@
 import { getRandomInt } from "@project/utils/Utils";
 import type Vector from "@project/utils/Vector";
 import Wall from "./Wall";
+import Effect from "../effect/Effect";
 
 export default class BreakableWall extends Wall {
     private resistance: number;
@@ -10,7 +11,8 @@ export default class BreakableWall extends Wall {
     constructor(id: string ,position: Vector, height: number, width: number) {
         super(id, position, height, width);
         this.resistance = getRandomInt(0, 3);
-        this.effect = getRandomInt(0, 6);
+        this.effect = getRandomInt(-1, 5);
+        console.log(Effect.getEffectById(this.effect));
     }
 
     public getEffect(): number | undefined {
@@ -23,6 +25,10 @@ export default class BreakableWall extends Wall {
 
     public addDamage(bombStrange: number): void {
         this.damage += bombStrange;
+    }
+
+    public getDamage() {
+        return this.damage;
     }
 
     public isDestroyed(): boolean {

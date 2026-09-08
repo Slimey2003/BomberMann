@@ -17,6 +17,7 @@ export const EffectType = {
     SPEED: 0,
     STRANGE: 1,
     RANGE: 2,
+    STACK: 3,
 };
 
 export type Canvas = {
@@ -58,6 +59,8 @@ export type WallDto = {
     pos: Vector;
     breakable: boolean;
     box: BoundingBox;
+    resistance?: number,
+    damage?: number,
 };
 
 export type EffectDto = {
