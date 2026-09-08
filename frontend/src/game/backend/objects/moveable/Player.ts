@@ -72,4 +72,13 @@ export default class Player extends Moveable {
         }
     }
 
+    public getMaxPlacedBomb() {
+        let max = 1;
+        const eff = this.getEffect(EffectType.STACK);
+        if (eff) {
+            max += eff.getScale();
+        }
+        return max;
+    }
+
 }

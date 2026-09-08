@@ -3,19 +3,24 @@ import type Vector from "@project/utils/Vector";
 import type Bomb from "./Bombs";
 
 export default class ExplodeBomb implements Delayed {
-    private static EXPOSITION_TIME: number = 4000; //sec
+    private static EXPOSITION_TIME: number = 2000; //sec
     
     private bomb: Bomb;
     private explodeTime: number;
     
-    private expositionRange: number = 40;
+    private expositionRange: number = 1;
     private expositionStrange: number = 1;
 
     private calculatedRange: Vector[] = [];
+    private playerTakeDamage: number[] = [];
 
     constructor(bomb: Bomb) {
         this.bomb = bomb;
         this.explodeTime = Date.now();
+    }
+
+    public getPlayerTakeDamage(): number[] {
+        return this.playerTakeDamage;
     }
 
     public getId(): string {
@@ -51,7 +56,7 @@ export default class ExplodeBomb implements Delayed {
     }
 
     public addRange(range: number): ExplodeBomb {
-        this.expositionRange += (range * 10);
+        this.expositionRange += range;
         return this;
     }
 

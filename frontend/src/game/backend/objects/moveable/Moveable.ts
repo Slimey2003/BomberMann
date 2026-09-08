@@ -47,17 +47,20 @@ export default abstract class Moveable {
             this.position = this.position.add(this.velocity);
             return;
         }
-        const backVector = this.getCollisionResolutionVector(wall.getBox());
+
+        const slideVector = this.getCornerSlideVector(wall.getBox());
+
+        const futurePos = slideVector ? this.position.add(this.velocity).add(slideVector) : this.position.add(this.velocity);
+        const backVector = this.getCollisionResolutionVector(wall.getBox(), futurePos);
         if (!backVector) {
-            this.position = this.position.add(this.velocity);
+            this.position = futurePos;
             return;
         }
-        this.position = this.position.add(this.velocity).add(backVector);
+        this.position = futurePos.add(backVector);
     }
 
-    public getCollisionResolutionVector(obstacle: BoundingBox): Vector | null {
+    public getCollisionResolutionVector(obstacle: BoundingBox, futurePos: Vector): Vector | null {
         const currentPos = this.getPosition();
-        const futurePos = currentPos.add(this.velocity);
         const box = new BoundingBox(futurePos, this.height, this.width);
 
         if (!box.overlaps(obstacle)) {
@@ -79,5 +82,37 @@ export default abstract class Moveable {
         const safeMove: Vector = this.velocity.scale(hitTime);
         
         return safeMove.subtract(this.velocity);
+    }
+
+    private getCornerSlideVector(obstacle: BoundingBox): Vector | null {
+        const thresholdX = this.width * 0.6;
+        const thresholdY = this.height * 0.6;
+        const box = this.getBox();
+
+        if (this.velocity.getX() !== 0 && this.velocity.getY() === 0) {
+            const overlapBottom = box.getMaxY() - obstacle.getMinY();
+            const overlapTop = obstacle.getMaxY() - box.getMinY();
+
+            if (overlapBottom > 0 && overlapBottom <= thresholdY && box.getMinY() < obstacle.getMinY()) {
+                return new Vector(0, -overlapBottom);
+            }
+            
+            if (overlapTop > 0 && overlapTop <= thresholdY && box.getMaxY() > obstacle.getMaxY()) {
+                return new Vector(0, overlapTop);
+            }
+        } else if (this.velocity.getY() !== 0 && this.velocity.getX() === 0) {
+            const overlapRight = box.getMaxX() - obstacle.getMinX();
+            const overlapLeft = obstacle.getMaxX() - box.getMinX();
+
+            if (overlapRight > 0 && overlapRight <= thresholdX && box.getMinX() < obstacle.getMinX()) {
+                return new Vector(-overlapRight, 0);
+            }
+            
+            if (overlapLeft > 0 && overlapLeft <= thresholdX && box.getMaxX() > obstacle.getMaxX()) {
+                return new Vector(overlapLeft, 0);
+            }
+        }
+        
+        return null;
     }
 }

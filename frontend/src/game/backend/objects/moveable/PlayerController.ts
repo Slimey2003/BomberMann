@@ -4,6 +4,7 @@ import Vector from "@project/utils/Vector";
 import type Wall from "../wall/Wall";
 import Player from "./Player";
 import type { Canvas } from "@project/utils";
+import BoundingBox from "@project/utils/BoundingBox";
 
 export default class PlayerController extends Controller {
     private players: Player[];
@@ -40,7 +41,7 @@ export default class PlayerController extends Controller {
     }
 
     public setPlayerVelocity(playerId: number, dir: Direction) {
-        this.players[playerId].setVelocity(dir.getVector().scale(10));
+        this.players[playerId].setVelocity(dir.getVector().scale(20));
     }
 
     public updateMovement() {
@@ -58,15 +59,27 @@ export default class PlayerController extends Controller {
         }
     }
 
-    public playerTakeDamage(bombPos: Vector, bombRange: Vector[]) {
+    public playerTakeDamage(hasDamage: number[], bombPos: Vector, bombRange: Vector[]): number[] {
         for (const player of this.players) {
+            if (hasDamage.some(id => id === player.getId())) continue;
+            const playerBox = player.getBox();
+            
+            const expandedBox = new BoundingBox(
+                new Vector(playerBox.centerX(), playerBox.centerY()),
+                playerBox.getHeight() + this.canvas.bombSize,
+                playerBox.getWidth() + this.canvas.bombSize
+            );
+
             for (const vec of bombRange) {
-                if (player.getBox().intersects(bombPos, vec) != null) {
+                if (vec.equals(Vector.nullVector)) continue;
+                if (expandedBox.intersects(bombPos, vec) !== null) {
+                    hasDamage.push(player.getId());
                     player.lostLive();
                     break;
                 }
             }
         }
+        return hasDamage;
     }
 
     public getPlayers(): Player[] {
