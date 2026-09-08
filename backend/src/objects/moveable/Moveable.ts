@@ -66,8 +66,8 @@ export default abstract class Moveable {
 
         const expandedObstacle = new BoundingBox(
             new Vector(obstacle.centerX(), obstacle.centerY()),
-            obstacle.getHeight() + this.height - 0.01,
-            obstacle.getWidth() + this.width - 0.01
+            obstacle.getHeight() + this.height,
+            obstacle.getWidth() + this.width
         );
         
         const hitTime = expandedObstacle.intersects(currentPos, futurePos);

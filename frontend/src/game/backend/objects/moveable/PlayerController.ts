@@ -45,12 +45,14 @@ export default class PlayerController extends Controller {
 
     public updateMovement() {
         for (const player of this.players) {
-            if (player.getMovement().equals(Vector.nullVector)) continue;
-            const futureVector = player.getPosition().add(player.getMovement());
-            let wall: Wall | undefined = super.getWallController().getCollidingWall(player.getBox(), futureVector);
+            const movement = player.getMovement();
+            if (movement.equals(Vector.nullVector)) continue;
+            let wall: Wall | undefined = super.getWallController().getCollidingWall(player.getPosition(), movement);
+            
             if (!wall) {
                 wall = super.getWallController().overlapsMoveableWithWall(player.getMovedBox());
             }
+            
             player.updateMove(wall);
             super.getEffectController().pickUp(player);
         }

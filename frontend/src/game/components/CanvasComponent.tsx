@@ -3,6 +3,20 @@ import { useEffect, useRef } from "react";
 import Game from "../backend/objects/Game";
 import Direction from "@project/utils/Direction";
 
+const imageCache: {[key: string]: HTMLImageElement} = {};
+let backgroundPatternCache: CanvasPattern | null = null;
+
+function getImage(name: string): HTMLImageElement {
+    if (imageCache[name]) {
+        return imageCache[name];
+    }
+    const img = new Image();
+    img.src = "/svg/" + name + ".svg";
+    imageCache[name] = img;
+    return img;
+}
+
+
 export default function Canvas() {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const game: Game | null = Game.generateBasisGame();
@@ -59,7 +73,6 @@ export default function Canvas() {
         };
 
         animationFrameId = requestAnimationFrame(loop);
-
         return () => {
             window.removeEventListener("keydown", handleKeyDown);
             window.removeEventListener("keyup", handleKeyUp);
@@ -73,8 +86,8 @@ export default function Canvas() {
                 <h1>Hello World</h1>
                 <canvas 
                     ref={canvasRef}
-                    width={750}
-                    height={750}
+                    width={975}
+                    height={975}
                     style={{ border: "2px solid #333" }} 
                 />
             </div>
@@ -87,9 +100,11 @@ function render(gameState: GameStateDto, ctx: CanvasRenderingContext2D, width: n
     const bgImg = getImage("background");
     
     if (bgImg.complete && bgImg.naturalHeight !== 0) {
-        const pattern = ctx.createPattern(bgImg, 'repeat');
-        if (pattern) {
-            ctx.fillStyle = pattern;
+        if (!backgroundPatternCache) {
+            backgroundPatternCache = ctx.createPattern(bgImg, 'repeat');
+        }
+        if (backgroundPatternCache) {
+            ctx.fillStyle = backgroundPatternCache;
             ctx.fillRect(0, 0, width, height);
         }
     }
@@ -145,10 +160,4 @@ function render(gameState: GameStateDto, ctx: CanvasRenderingContext2D, width: n
             );
         }
     }
-}
-
-function getImage(name: string): HTMLImageElement {
-    const img = new Image();
-    img.src = "/svg/" + name + ".svg";
-    return img;
 }

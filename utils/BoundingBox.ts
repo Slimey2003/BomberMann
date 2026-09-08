@@ -1,6 +1,7 @@
 import type Vector from "./Vector";
 
 export default class BoundingBox {
+    public static readonly EPSILON = 1e-8;
     private minX: number;
     private minY: number;
 
@@ -87,10 +88,11 @@ export default class BoundingBox {
         ];
 
         for (let i = 0; i < 4; i++) {
-            if (p[i] === 0 && q[i] < 0) {
-                return null;
-            }
-            if (p[i] !== 0) {
+            if (Math.abs(p[i]) < BoundingBox.EPSILON) {
+                if (q[i] < -BoundingBox.EPSILON) {
+                    return null;
+                }
+            } else {
                 const r = q[i] / p[i];
                 if (p[i] < 0) {
                     tMin = Math.max(tMin, r);
@@ -99,10 +101,11 @@ export default class BoundingBox {
                 }
             }
         }
+        
         if (tMin <= tMax && tMax >= 0 && tMin <= 1.0) {
             return tMin;
         }
-
+        
         return null;
     }
 }
