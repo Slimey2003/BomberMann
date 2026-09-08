@@ -114,9 +114,7 @@ export default class BombController extends Controller {
         for (const bomb of this.placedBombs.getValues()) {
             const movement = bomb.getMovement();
             if (movement.equals(Vector.nullVector)) continue;
-
-            const futureVector = bomb.getPosition().add(movement);
-            let wall: Wall | undefined = super.getWallController().getCollidingWall(bomb.getBox(), futureVector);
+            let wall: Wall | undefined = super.getWallController().getCollidingWall(bomb.getPosition(), movement);
             
             if (!wall) {
                 wall = super.getWallController().overlapsMoveableWithWall(bomb.getMovedBox());
@@ -136,8 +134,9 @@ export default class BombController extends Controller {
         for (const player of super.getPlayerController().getPlayers()) {
             for (const bomb of this.getPlacedBombs()) {
                 if (player.getBox().overlaps(bomb.getBox())) {
-                    if (bomb.noCollision()) continue;
-                    bomb.setVelocity(player.getMovement().normalize().scale(20));
+                    const movement = player.getMovement()
+                    if (bomb.noCollision() || movement.equals(Vector.nullVector)) continue;
+                    bomb.setVelocity(movement.normalize().scale(20));
                     break;
                 }
             }

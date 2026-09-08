@@ -21,21 +21,13 @@ export default class WallController {
         return this.walls;
     }
 
-    public getCollidingWall(box: BoundingBox, movement: Vector): Wall | undefined {
+    public getCollidingWall(start: Vector, movement: Vector): Wall | undefined {
         let closestWall: Wall | undefined = undefined;
         let minHitTime = Infinity;
-        const start = new Vector(box.centerX(), box.centerY());
         const end = start.add(movement);
 
         for (const wall of this.walls.values()) {
-            const obstacle = wall.getBox();
-            const expandedObstacle = new BoundingBox(
-                new Vector(obstacle.centerX(), obstacle.centerY()),
-                obstacle.getHeight() + box.getHeight() - 0.01,
-                obstacle.getWidth() + box.getWidth() - 0.01
-            );
-            
-            const hitTime = expandedObstacle.intersects(start, end);
+            const hitTime = wall.getBox().intersects(start, end);
             
             if (hitTime !== null && hitTime < minHitTime) {
                 minHitTime = hitTime;

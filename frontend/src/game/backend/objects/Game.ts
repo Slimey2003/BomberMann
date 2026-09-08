@@ -86,7 +86,7 @@ export default class Game {
 
         if (counter % 2 === 0) {
             pController.updateMovement();
-            bController.playerCollidedWithBomb(false);
+            bController.playerCollidedWithBomb();
             bController.updateMovement();
         }
 
@@ -98,7 +98,6 @@ export default class Game {
     };
 
     public gameOver() {
-        console.log(this.gameTickScheduler.getLastTime());
         if (Game.gameTime <= (this.gameTickScheduler.getLastTime() - Date.now())
             || this.playerController.getPlayers().every(p => p.isDead())) {
             this.gameStop();
