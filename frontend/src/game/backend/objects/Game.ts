@@ -84,11 +84,9 @@ export default class Game {
         const pController = this.getPlayerController();
         const bController = this.getBombController();
 
-        if (counter % 2 === 0) {
-            pController.updateMovement();
-            bController.playerCollidedWithBomb(false);
-            bController.updateMovement();
-        }
+        pController.updateMovement();
+        bController.updateMovement();
+        bController.playerCollidedWithBomb();
 
         if (counter % 4 === 0) {
             bController.triggerExplosion();
@@ -98,7 +96,6 @@ export default class Game {
     };
 
     public gameOver() {
-        console.log(this.gameTickScheduler.getLastTime());
         if (Game.gameTime <= (this.gameTickScheduler.getLastTime() - Date.now())
             || this.playerController.getPlayers().every(p => p.isDead())) {
             this.gameStop();

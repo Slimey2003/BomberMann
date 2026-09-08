@@ -122,7 +122,7 @@ export default class BombController extends Controller {
             
             bomb.updateMove(wall);
             if (wall) {
-                const safePos = bomb.getPosition().subtract(movement.normalize().scale(1));
+                const safePos = bomb.getPosition().subtract(movement.scale(1));
                 
                 bomb.setVelocity(Vector.nullVector);
                 bomb.setPosition(this.modifyPosition(safePos));
@@ -134,8 +134,9 @@ export default class BombController extends Controller {
         for (const player of super.getPlayerController().getPlayers()) {
             for (const bomb of this.getPlacedBombs()) {
                 if (player.getBox().overlaps(bomb.getBox())) {
-                    if (bomb.noCollision()) continue;
-                    bomb.setVelocity(player.getMovement().normalize().scale(20));
+                    const movement = player.getMovement()
+                    if (bomb.noCollision() || movement.equals(Vector.nullVector)) continue;
+                    bomb.setVelocity(movement.normalize().scale(20));
                     break;
                 }
             }
