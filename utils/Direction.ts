@@ -19,6 +19,21 @@ export default class Direction {
         Object.freeze(this);
     }
 
+    public static fromVector(start: Vector, end: Vector): Direction {
+        const diffX = start.getX() - end.getX();
+        const diffY = start.getY() - end.getY();
+
+        if (diffX === 0 && diffY === 0) {
+            return Direction.NONE;
+        }
+
+        if (Math.abs(diffX) > Math.abs(diffY)) {
+            return diffX > 0 ? Direction.EAST : Direction.WEST;
+        } 
+        
+        return diffY > 0 ? Direction.NORTH : Direction.SOUTH;
+    }
+
     public static fromKey(key: string): Direction {
         switch (key.toLowerCase()) {
             case "w":

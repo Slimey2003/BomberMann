@@ -65,7 +65,7 @@ export type WallDto = {
 };
 
 export type EffectDto = {
+    id: number;
     pos: Vector;
-    effect: number;
     box: BoundingBox;
 };

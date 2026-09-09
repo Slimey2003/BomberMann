@@ -163,8 +163,8 @@ export default class Game {
 
         const effectDtos: EffectDto[] = effects.map(e => {
             return {
+                id: e.getEffectId(),
                 pos: e.getPosition(),
-                effect: e.getEffectId(),
                 box: e.getBox()
             }
         });
