@@ -21,6 +21,10 @@ export default class PlayerInputController {
         this.inputs = this.inputs.filter(k => key !== k);
     }
 
+    public clearKeys() {
+        this.inputs = [];
+    }
+
     public getLastKey(): string {
         return this.inputs[0];
     }
