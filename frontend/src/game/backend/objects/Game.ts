@@ -96,7 +96,7 @@ export default class Game {
     };
 
     public gameOver() {
-        if (Game.gameTime <= (this.gameTickScheduler.getLastTime() - Date.now())
+        if ((this.gameTickScheduler.getStartTime() + Game.gameTime) - this.gameTickScheduler.getLastTime() <= 0
             || this.playerController.getPlayers().every(p => p.isDead())) {
             this.gameStop();
             this.gameState = "ending";
@@ -168,15 +168,17 @@ export default class Game {
                 box: e.getBox()
             }
         });
-
         return {
             type: this.gameState,
             gameTime: Game.gameTime,
-            timeLeft: this.gameTickScheduler.getLastTime(),
+            timeLeft: (this.gameTickScheduler.getStartTime() + Game.gameTime) - this.gameTickScheduler.getLastTime(),
             players: playerDtos,
             bombs: bombsDtos,
             walls: wallDtos,
             effects: effectDtos,
+            pickedEffectCount: this.getEffectController().getPickedEffectCount(),
+            bombPlaceCount: this.getBombController().getPlaceCount(),
+            maxPlayerLife: Game.playerLives,
             maxEffects: this.getEffectController().getMaxEffectsCards(),
         }
     }

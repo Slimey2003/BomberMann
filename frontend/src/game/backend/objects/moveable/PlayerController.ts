@@ -7,6 +7,7 @@ import type { Canvas } from "@project/utils";
 import BoundingBox from "@project/utils/BoundingBox";
 
 export default class PlayerController extends Controller {
+
     private players: Player[];
 
 

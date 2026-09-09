@@ -9,7 +9,11 @@ import { EffectType } from "@project/utils";
 export default class BombController extends Controller {
     private placedBombs: DelayQueue<Bomb> = new DelayQueue();
     private explodeBombs: DelayQueue<ExplodeBomb> = new DelayQueue();
+    private placedCount: number = 0;
 
+    public getPlaceCount(): number {
+        return this.placedCount;
+    }
 
     //Add Bomb
 
@@ -34,6 +38,7 @@ export default class BombController extends Controller {
         if (playerBombCount >= player.getMaxPlacedBomb()) return; //Max 
         
         this.placedBombs.put(newBomb);
+        this.placedCount++;
     }
 
     //Pick Bombs
