@@ -37,6 +37,10 @@ export type GameStateDto = {
     bombs: BombDto[];
     walls: WallDto[];
     effects: EffectDto[];
+    pickedEffectCount: number;
+    bombPlaceCount: number;
+    maxPlayerLife: number;
+    maxEffects: number;
 };
 
 export type PlayerDto = {
