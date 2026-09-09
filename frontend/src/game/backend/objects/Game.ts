@@ -14,7 +14,7 @@ import BreakableWall from "./wall/BreakableWall";
 export default class Game {
     private static blockProbability: number = 0.6;
     private static playerLives: number = 3;
-    private static gameTickPerSec: number = 4;
+    private static gameTickPerSec: number = 20;
     private static gameTime: number = 600_000;//10 Min
 
     private gameState: "config" | "running" | "ending" = "config";
@@ -176,7 +176,8 @@ export default class Game {
             players: playerDtos,
             bombs: bombsDtos,
             walls: wallDtos,
-            effects: effectDtos
+            effects: effectDtos,
+            maxEffects: this.getEffectController().getMaxEffectsCards(),
         }
     }
     

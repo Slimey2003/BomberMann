@@ -1,7 +1,7 @@
 import { EffectType } from "@project/utils";
 
 export default class Effect {
-    private static SPEED = {step: 1, max: 10, default: 1};
+    private static SPEED = {step: 0.25, max: 1.5, default: 1.25};
     private static STACK = {step: 1, max: 3, default: 1};
     private static STRANGE = {step: 1, max: 3, default: 1};
     private static RANGE = {step: 1, max: 3, default: 1};
