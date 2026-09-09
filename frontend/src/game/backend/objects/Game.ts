@@ -119,7 +119,8 @@ export default class Game {
                     breakable: true,
                     resistance: w.getResistance(),
                     damage: w.getDamage(),
-                    box: w.getBox()
+                    box: w.getBox(), 
+                    eff: w.getEffect()
                 }
             }
             return {

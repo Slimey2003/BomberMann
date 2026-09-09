@@ -61,6 +61,7 @@ export type WallDto = {
     box: BoundingBox;
     resistance?: number,
     damage?: number,
+    eff?: number | undefined
 };
 
 export type EffectDto = {
