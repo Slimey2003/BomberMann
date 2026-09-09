@@ -4,7 +4,7 @@ import Moveable from "./Moveable";
 
 export default class Bomb extends Moveable implements Delayed {
     private static EXPOSITION_EXPIRATION: number = 4000; //4 sec
-    private static PROTECTION_TIME: number = 2000; //2 sec
+    private static PROTECTION_TIME: number = 1000; //2 sec
     private id: string;
     private playerId: number;
     private placeTime: number;
@@ -30,7 +30,7 @@ export default class Bomb extends Moveable implements Delayed {
     }
 
     public noCollision(): boolean {
-        return ((this.placeTime + Bomb.PROTECTION_TIME) - Date.now()) > 0 || this.getDelay() <= 4000;
+        return ((this.placeTime + Bomb.PROTECTION_TIME) - Date.now()) > 0 || this.getDelay() <= 1000;
     }
 
     public getDelay(): number {
