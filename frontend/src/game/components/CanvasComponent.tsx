@@ -1,7 +1,6 @@
 import type { GameStateDto } from "@project/utils";
 import { useEffect, useRef } from "react";
 import Game from "../backend/objects/Game";
-import Direction from "@project/utils/Direction";
 import PlayerInputController from "../backend/objects/PlayerInputController";
 
 const imageCache: {[key: string]: HTMLImageElement} = {};
@@ -121,7 +120,7 @@ function render(gameState: GameStateDto, ctx: CanvasRenderingContext2D, width: n
     }
     
     for (const player of gameState.players) {
-        const playerImg = getImage("spieler_0" + player.id);
+        const playerImg = getImage("spieler_" + player.id);
         if (playerImg.complete && playerImg.naturalHeight !== 0) {
             ctx.drawImage(
                 playerImg,
@@ -134,7 +133,7 @@ function render(gameState: GameStateDto, ctx: CanvasRenderingContext2D, width: n
     }
 
     for (const effect of gameState.effects) {
-        const effectImg = getImage("effect_0" + effect.effect);
+        const effectImg = getImage("effect_" + effect.effect);
         if (effectImg.complete && effectImg.naturalHeight !== 0) {
             ctx.drawImage(
                 effectImg,

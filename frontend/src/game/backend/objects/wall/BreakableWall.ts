@@ -11,8 +11,7 @@ export default class BreakableWall extends Wall {
     constructor(id: string ,position: Vector, height: number, width: number) {
         super(id, position, height, width);
         this.resistance = getRandomInt(0, 3);
-        this.effect = getRandomInt(-1, 5);
-        console.log(Effect.getEffectById(this.effect));
+        this.effect = Effect.getEffectById(getRandomInt(-1, 5))?.getId();
     }
 
     public getEffect(): number | undefined {

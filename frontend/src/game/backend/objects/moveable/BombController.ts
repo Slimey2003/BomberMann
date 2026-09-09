@@ -88,7 +88,7 @@ export default class BombController extends Controller {
             if (!explodeBomb) break;
             for (const vec of explodeBomb.getCalculatedRange()) {
                 const eff: number | undefined = this.getWallController().expositionOnVector(explodeBomb.getStrange(), vec);
-                if (!eff) continue;
+                if (eff == undefined) continue;
                 this.getEffectController().placeEffect(vec, eff);
             }
         }
