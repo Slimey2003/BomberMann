@@ -27,9 +27,9 @@ export default abstract class Moveable {
         return new BoundingBox(this.position, this.height, this.width);
     }
 
-    public getMovedBox(): BoundingBox {
+    public getMovedBox(modifyMove: Vector): BoundingBox {
         const movement = this.getMovement();
-        const movedPos = this.position.add(movement);
+        const movedPos = this.position.add(movement).add(modifyMove);
 
         return new BoundingBox(movedPos, this.height, this.width);
     }
@@ -42,21 +42,8 @@ export default abstract class Moveable {
         return this.velocity.getCopy();
     }
 
-    public updateMove(wall: Wall | undefined) {
-        if (!wall) {
-            this.position = this.position.add(this.velocity);
-            return;
-        }
-
-        const slideVector = this.getCornerSlideVector(wall.getBox());
-
-        const futurePos = slideVector ? this.position.add(this.velocity).add(slideVector) : this.position.add(this.velocity);
-        const backVector = this.getCollisionResolutionVector(wall.getBox(), futurePos);
-        if (!backVector) {
-            this.position = futurePos;
-            return;
-        }
-        this.position = futurePos.add(backVector);
+    public updateMove(modifyMove: Vector) {
+        this.position = this.position.add(this.velocity).add(modifyMove);
     }
 
     public getCollisionResolutionVector(obstacle: BoundingBox, futurePos: Vector): Vector | null {
@@ -84,7 +71,7 @@ export default abstract class Moveable {
         return safeMove.subtract(this.velocity);
     }
 
-    private getCornerSlideVector(obstacle: BoundingBox): Vector | null {
+    public getCornerSlideVector(obstacle: BoundingBox): Vector | null {
         const thresholdX = this.width * 0.6;
         const thresholdY = this.height * 0.6;
         const box = this.getBox();

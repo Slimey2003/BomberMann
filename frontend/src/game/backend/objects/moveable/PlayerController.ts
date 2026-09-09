@@ -47,14 +47,7 @@ export default class PlayerController extends Controller {
     public updateMovement() {
         for (const player of this.players) {
             const movement = player.getMovement();
-            if (movement.equals(Vector.nullVector)) continue;
-            let wall: Wall | undefined = super.getWallController().getCollidingWall(player.getPosition(), movement);
-            
-            if (!wall) {
-                wall = super.getWallController().overlapsMoveableWithWall(player.getMovedBox());
-            }
-            
-            player.updateMove(wall);
+            this.playerMovement(player, movement);
             super.getEffectController().pickUp(player);
         }
     }
@@ -84,5 +77,42 @@ export default class PlayerController extends Controller {
 
     public getPlayers(): Player[] {
         return this.players;
+    }
+
+    private playerMovement(player: Player, movement: Vector) {
+        let wall: Wall | undefined = this.getWallOnMove(player, movement, Vector.nullVector);
+
+        if (!wall) {
+            player.updateMove(Vector.nullVector);
+            return;
+        }
+
+        const slideVector = player.getCornerSlideVector(wall.getBox());
+        let futurePos = player.getPosition().add(movement);
+
+        if (slideVector) {
+            futurePos = futurePos.add(slideVector);
+            const slideMovement = movement.add(slideVector);
+            wall = this.getWallOnMove(player, slideMovement, slideVector);
+        }
+
+        if (slideVector && !wall) {
+            player.updateMove(slideVector);
+            return;
+        }
+
+        if (wall) {
+            const backVector = player.getCollisionResolutionVector(wall.getBox(), futurePos);
+            player.updateMove(backVector || Vector.nullVector);
+        }
+    }
+
+    private getWallOnMove(player: Player, movement: Vector, modifyMove: Vector): Wall | undefined {
+        let wall: Wall | undefined = super.getWallController().getCollidingWall(player.getPosition(), movement);
+            
+        if (!wall) {
+            wall = super.getWallController().overlapsMoveableWithWall(player.getMovedBox(modifyMove));
+        }
+        return wall;
     }
 }
