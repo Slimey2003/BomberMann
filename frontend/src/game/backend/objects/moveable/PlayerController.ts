@@ -1,15 +1,13 @@
 import Controller from "../Controller";
-import type Direction from "@project/utils/Direction";
 import Vector from "@project/utils/Vector";
 import type Wall from "../wall/Wall";
 import Player from "./Player";
 import type { Canvas } from "@project/utils";
 import BoundingBox from "@project/utils/BoundingBox";
+import PlayerInputController from "../PlayerInputController";
 
 export default class PlayerController extends Controller {
-
     private players: Player[];
-
 
     constructor(playerNames: string[], lives: number, canvas: Canvas) {
         super(canvas);
@@ -37,16 +35,17 @@ export default class PlayerController extends Controller {
         ];
 
         for (let i = 0; i < playerNames.length; i++) {
-            this.players.push(new Player(i, lives, playerNames[i], pos[i], canvas.playerSize, canvas.playerSize));
+            const controller: PlayerInputController = new PlayerInputController();
+            controller.onSpace = () => {
+                this.getBombController().placeBomb(i);
+            }
+            this.players.push(new Player(i, lives, playerNames[i], pos[i], canvas.playerSize, canvas.playerSize, controller));
         }
-    }
-
-    public setPlayerVelocity(playerId: number, dir: Direction) {
-        this.players[playerId].setVelocity(dir.getVector().scale(10));
     }
 
     public updateMovement() {
         for (const player of this.players) {
+            player.setVelocity(player.getInputController().getLastDirection().getVector().scale(10));
             const movement = player.getMovement();
             this.playerMovement(player, movement);
             super.getEffectController().pickUp(player);

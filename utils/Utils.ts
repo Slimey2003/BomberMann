@@ -29,10 +29,17 @@ export type Canvas = {
     effectSize: number;
 }
 
+export type RoomSetting = {
+    players: string[],
+    gameTime: number;
+    difficulty: number,
+    canvasSize: number,
+    roomSize: number
+}
+
 export type GameSetting = {
     gameTime: number;
     playerMaxLive: number;
-    roomSize: number;
     canvas: Canvas;
     blockProbability: number;
 }

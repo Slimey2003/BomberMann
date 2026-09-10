@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Game from "../backend/objects/Game";
-import PlayerInputController from "../objects/PlayerInputController";
+import PlayerInputController from "../backend/objects/PlayerInputController";
 import type { GameStateDto } from "@project/utils";
 import Canvas from "./CanvasComponent";
 import { Card, Col, Container, ListGroup, ProgressBar, Row, Badge } from "react-bootstrap";
@@ -12,37 +12,7 @@ const formatMilliseconds = (ms: number): string => {
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 };
 
-export default function GameComponent() {
-    const [gameState, setGameState] = useState<GameStateDto | null>(null);
-    const game: Game = useMemo(() => Game.generateBasisGame(), []);
-    const inputController = useMemo(() => new PlayerInputController(0, window), []);
-    
-    useEffect(() => {
-        game?.gameStart();
-        let animationFrameId: number;
-
-        inputController.onSpace = () => {
-            game?.getBombController().placeBomb(0);
-        };
-
-        const loop = () => {
-            game?.getPlayerController().setPlayerVelocity(0, inputController.getLastDirection());
-            const state = game?.render();
-            
-            if (state) {
-                setGameState(state);
-            }
-            
-            animationFrameId = requestAnimationFrame(loop);
-        };
-
-        animationFrameId = requestAnimationFrame(loop);
-
-        return () => {
-            cancelAnimationFrame(animationFrameId);
-        };
-    }, [game, inputController]);
-    
+export default function GameComponent({gameState, game}: {gameState: GameStateDto, game: Game}) {
     const formattedGameTime = gameState?.setting.gameTime ? formatMilliseconds(gameState.setting.gameTime) : "0:00";
     const formattedTimeLeft = gameState?.timeLeft ? formatMilliseconds(gameState.timeLeft) : "0:00";
     
