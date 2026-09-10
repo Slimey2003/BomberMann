@@ -42,7 +42,7 @@ export default class PlayerController extends Controller {
     }
 
     public setPlayerVelocity(playerId: number, dir: Direction) {
-        this.players[playerId].setVelocity(dir.getVector().scale(20));
+        this.players[playerId].setVelocity(dir.getVector().scale(10));
     }
 
     public updateMovement() {

@@ -43,19 +43,21 @@ export default function GameComponent() {
         };
     }, [game, inputController]);
     
-    const formattedGameTime = gameState?.gameTime ? formatMilliseconds(gameState.gameTime) : "0:00";
+    const formattedGameTime = gameState?.setting.gameTime ? formatMilliseconds(gameState.setting.gameTime) : "0:00";
     const formattedTimeLeft = gameState?.timeLeft ? formatMilliseconds(gameState.timeLeft) : "0:00";
     
-    const timeProgress = gameState?.gameTime && gameState?.timeLeft 
-        ? (gameState.timeLeft / gameState.gameTime) * 100 
+    const timeProgress = gameState?.setting.gameTime && gameState?.timeLeft 
+        ? (gameState.timeLeft / gameState.setting.gameTime) * 100 
         : 0;
+
+    const canvasSize = gameState?.setting.canvas.wallSize == 40 ? 520 : 510;
 
     return (
         <>
             <Container fluid className="py-4 min-vh-100 d-flex align-items-center" style={{ backgroundColor: "#1e1e2f" }}>
                 <Row className="w-100 justify-content-center align-items-center">
                     <Col xs={12} xl={3} className="d-flex justify-content-center justify-content-xl-end mb-4 mb-xl-0">
-                        <Card className="bg-dark text-light shadow-lg rounded-4" style={{ width: '18rem', border: 'none' }}>
+                        <Card className="bg-dark text-light shadow-lg rounded-4" style={{ width: '18rem', minHeight: '25rem', border: 'none' }}>
                             <Card.Body className="p-4">
                                 <Card.Title className="mb-4 text-info fw-bold fs-4">SPIELER</Card.Title>
                                 <ListGroup variant="flush">
@@ -69,7 +71,7 @@ export default function GameComponent() {
                                                                 : p.lives != 0 
                                                                 ? "warning" 
                                                                 : "danger" 
-                                                        } pill>{p.lives}/{gameState.maxPlayerLife}</Badge>
+                                                        } pill>{p.lives}/{gameState.setting.playerMaxLive}</Badge>
                                             </ListGroup.Item>
                                         )
                                     })}
@@ -79,13 +81,13 @@ export default function GameComponent() {
                     </Col>
 
                     <Col xs={12} xl="auto" className="d-flex justify-content-center">
-                        <div className="shadow-lg p-2 bg-dark rounded-4">
-                            <Canvas gameState={gameState} width={975} height={975} />
+                        <div className="shadow-lg p-2 bg-dark">
+                            <Canvas gameState={gameState} width={canvasSize} height={canvasSize} /> {/** 510 klein 520 Groß **/}
                         </div>
                     </Col>
 
                     <Col xs={12} xl={3} className="d-flex justify-content-center justify-content-xl-start mt-4 mt-xl-0">
-                        <Card className="bg-dark text-light shadow-lg rounded-4" style={{ width: '18rem', border: 'none' }}>
+                        <Card className="bg-dark text-light shadow-lg rounded-4" style={{ width: '18rem', minHeight: '25rem', border: 'none' }}>
                             <Card.Body className="p-4 d-flex flex-column gap-3">
                                 <div>
                                     <Card.Title className="text-info fw-bold mb-2 fs-5">SPIELZEIT</Card.Title>
