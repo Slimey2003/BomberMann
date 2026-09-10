@@ -29,9 +29,17 @@ export type Canvas = {
     effectSize: number;
 }
 
+export type GameSetting = {
+    gameTime: number;
+    playerMaxLive: number;
+    roomSize: number;
+    canvas: Canvas;
+    blockProbability: number;
+}
+
 export type GameStateDto = {
     type: "config" | "running" | "ending";
-    gameTime: number;
+    setting: GameSetting;
     timeLeft: number;
     players: PlayerDto[];
     bombs: BombDto[];
@@ -39,7 +47,6 @@ export type GameStateDto = {
     effects: EffectDto[];
     pickedEffectCount: number;
     bombPlaceCount: number;
-    maxPlayerLife: number;
     maxEffects: number;
 };
 
