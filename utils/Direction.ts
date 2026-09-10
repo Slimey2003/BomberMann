@@ -59,6 +59,27 @@ export default class Direction {
         return Direction.NONE;
     }
 
+    public static fromKeyCode(key: number): Direction {
+        switch (key) {
+            case 87:
+            case 38:
+                return Direction.NORTH;
+
+            case 68:
+            case 39:
+                return Direction.EAST;
+
+            case 83:
+            case 40:
+                return Direction.SOUTH;
+
+            case 65:
+            case 37:
+                return Direction.WEST;
+        }
+        return Direction.NONE;
+    }
+
     public opposite(): Direction | undefined {
         switch (this) {
             case Direction.NORTH: return Direction.SOUTH;

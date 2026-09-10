@@ -40,7 +40,6 @@ export default class Game {
         return new Game(["Spieler1"], {
             gameTime: 600_000,
             playerMaxLive: 3,
-            roomSize: 3,
             blockProbability: 0.6,
             canvas: {
                 height: 520,
@@ -88,7 +87,7 @@ export default class Game {
 
         const pController = this.getPlayerController();
         const bController = this.getBombController();
-
+        
         pController.updateMovement();
         bController.updateMovement();
         bController.playerCollidedWithBomb();
