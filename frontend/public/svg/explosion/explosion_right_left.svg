@@ -1,5 +1,30 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10" width="10" height="10" preserveAspectRatio="none">
-    <rect x="0" y="0" width="10" height="10" fill="#D32F2F" />
-    <rect x="0" y="1" width="10" height="8" fill="#F57C00" />
-    <rect x="0" y="3" width="10" height="4" fill="#FFF176" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" preserveAspectRatio="none" shape-rendering="crispEdges">
+  <defs>
+    <filter id="expGlowH" x="-10%" y="-30%" width="120%" height="160%">
+      <feGaussianBlur stdDeviation="1.2" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <rect x="0" y="8" width="64" height="48" fill="#8f1500" />
+
+  <polygon points="0,12 16,8 32,14 48,10 64,12 64,52 48,54 32,50 16,56 0,52" fill="#d93800" />
+
+  <polygon points="0,18 12,16 28,20 44,17 64,19 64,45 44,47 28,44 12,48 0,46" fill="#ff7700" />
+
+  <polygon points="0,24 16,22 36,25 52,23 64,24 64,40 52,41 36,39 16,42 0,40" fill="#ffb700" />
+
+  <g filter="url(#expGlowH)">
+    <polygon points="0,27 20,26 40,28 64,27 64,37 40,36 20,38 0,37" fill="#ffe066" />
+    <rect x="0" y="30" width="64" height="4" fill="#ffffff" />
+  </g>
+
+  <line x1="0" y1="32" x2="64" y2="32" stroke="#ffffff" stroke-width="1.5" opacity="0.9" />
+
+  <rect x="12" y="10" width="4" height="2" fill="#ffaa00" />
+  <rect x="36" y="9" width="3" height="2" fill="#ffaa00" />
+  <rect x="50" y="11" width="4" height="2" fill="#ffaa00" />
+  <rect x="20" y="52" width="3" height="2" fill="#ffaa00" />
+  <rect x="44" y="53" width="4" height="2" fill="#ffaa00" />
 </svg>
+

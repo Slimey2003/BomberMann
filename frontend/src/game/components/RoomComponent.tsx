@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Button, Card, Col, Container, Form, Row } from "react-bootstrap";
+import { useEffect, useMemo, useState } from "react";
+import { Button, Card, Col, Container, Row } from "react-bootstrap";
 import GameManager from "../backend/GameManager";
 import SettingComponent from "./SettingsComponent";
 import type Game from "../backend/objects/Game";
