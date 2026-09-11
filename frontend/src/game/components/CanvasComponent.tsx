@@ -57,12 +57,8 @@ function render(gameState: GameStateDto, ctx: CanvasRenderingContext2D, imageCon
         imageController.drawImage("effect/effect_" + effect.id, effect.box);
     }
 
+    
     for (const bomb of gameState.bombs) {
-        if (!bomb.explode || bomb.explode.length === 0) {
-            imageController.drawImage("bomb/bomb", bomb.box);
-            continue;
-        }
-        imageController.drawImage("explosion/explosion_center", bomb.box);
         for (const vec of bomb.explode) {
             if (!vec.equals(Vector.nullVector)) {
                 const dir = Direction.fromVector(bomb.pos, vec);
@@ -82,4 +78,12 @@ function render(gameState: GameStateDto, ctx: CanvasRenderingContext2D, imageCon
             }
         }
     }
+    for (const bomb of gameState.bombs) {
+        if (!bomb.explode || bomb.explode.length === 0) {
+            imageController.drawImage("bomb/bomb", bomb.box);
+            continue;
+        }
+        imageController.drawImage("explosion/explosion_center", bomb.box);
+    }
+            
 }
