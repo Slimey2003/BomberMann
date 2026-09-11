@@ -49,7 +49,7 @@ export type GameSetting = {
 
 export type GameStateDto = {
     roomId: string;
-    type: "config" | "running" | "ending";
+    type: "loading" | "running" | "ending";
     setting: GameSetting;
     timeLeft: number;
     players: PlayerDto[];

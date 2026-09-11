@@ -3,6 +3,7 @@ import type { GameStateDto } from "@project/utils";
 import Canvas from "./CanvasComponent";
 import { Card, Col, Container, ListGroup, ProgressBar, Row, Badge, Spinner } from "react-bootstrap";
 import { useEffect, useMemo } from "react";
+import StartingOverlay from "./overlay/StartingOverlay";
 
 const formatMilliseconds = (ms: number): string => {
     const totalSeconds = Math.floor(ms / 1000);
@@ -62,25 +63,8 @@ export default function GameComponent({gameState, game}: {gameState: GameStateDt
         <>
             <Container fluid className="py-4 min-vh-100 d-flex align-items-center" style={{ backgroundColor: "#1e1e2f" }}>
 
-                {gameState.type === "config" &&
-                    (<div
-                        style={{
-                            position: "fixed",
-                            top: 0,
-                            left: 0,
-                            width: "100vw",
-                            height: "100vh",
-                            backgroundColor: "rgba(30, 30, 47, 0.9)",
-                            zIndex: 9999,
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            justifyContent: "center"
-                        }}
-                    >
-                        <Spinner animation="border" variant="primary" style={{ width: "5rem", height: "5rem", borderWidth: "0.3rem" }} />
-                        <h2 className="text-light mt-4 fw-bold">Warte auf Spielstart...</h2>
-                    </div>)
+                {gameState.type === "loading" &&
+                    (<StartingOverlay/>)
                 }
                 <Row className="w-100 justify-content-center align-items-center">
                     <Col xs={12} xl={3} className="d-flex justify-content-center justify-content-xl-end mb-4 mb-xl-0">
