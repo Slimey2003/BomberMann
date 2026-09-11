@@ -1,13 +1,55 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button, Card, Col, Container, Form, Row } from "react-bootstrap";
 import GameManager from "../backend/GameManager";
+import SettingComponent from "./SettingsComponent";
+import type Game from "../backend/objects/Game";
+import type { GameStateDto } from "@project/utils";
+import GameComponent from "./GameComponent";
 
-export default function SettingComponent() {
-    const [playerName, setPlayerName] = useState("");
-    const [difficulty, setDifficulty] = useState(2);
-    const [isLargeField, setIsLargeField] = useState(false);
+export default function RoomComponent() {
     const manager = useMemo(() => new GameManager(), []);
-    
+    const [gameState, setGameState] = useState<GameStateDto | null>(null);
+    const [game, setGame] = useState<Game | null>(null);
+    const [players, setPlayers] = useState<string[]>([""]);
+    const [userId, setUserId] = useState<number | undefined>(undefined);
+    const [roomId, setRoomId] = useState<string | undefined>(undefined);
+
+    useEffect(() => {
+        const setting = manager.createRoom("player1", 1);
+        setUserId(0);
+        setPlayers(setting.players);
+        setRoomId(setting.roomId);
+    }, [manager]);
+
+    useEffect(() => {
+        if (!game) return;
+        let animationFrameId: number;
+
+        const loop = () => {
+            const state = game?.render();
+            
+            if (state) {
+                setGameState(state);
+            }
+            
+            animationFrameId = requestAnimationFrame(loop);
+        };
+
+        animationFrameId = requestAnimationFrame(loop);
+
+        return () => {
+            cancelAnimationFrame(animationFrameId);
+        };
+    }, [game]);
+
+    if (!roomId || roomId.length == 0 || userId == undefined) {
+        return <></>
+    }
+
+    if (game && gameState && gameState.type !== "ending") {
+        return <GameComponent gameState={gameState} game={game}/>
+    }
+
     return (
         <>
             <style>
@@ -32,60 +74,28 @@ export default function SettingComponent() {
             </style>
             <Container fluid className="py-4 min-vh-100 d-flex flex-column align-items-center justify-content-center" style={{ backgroundColor: "#1e1e2f" }}>
                 <Card className="setting-card bg-dark text-light shadow-lg rounded-4 p-3" style={{ border: '1px solid #333' }}>
+                    <Card.Header> 
+                        <h1 className="text-primary">Room</h1>
+                    </Card.Header>
                     <Card.Body className="p-0">
                         <Row className="m-0 h-100">
-                            <Col md={5} className="p-4 responsive-border d-flex flex-column justify-content-center gap-3">    
-                                <h1 className="text-primary">Room</h1>
-                                <Button variant="outline-light" className="w-100 rounded-pill py-2">Spieler 1</Button>
+                            <Col md={5} className="p-4 responsive-border d-flex flex-column justify-content-start gap-3">   
+                                <h4 className="text-primary">Players</h4>
+                                {players.map(p => {
+                                    return <Button key={p} variant="outline-light" className="w-100 rounded-pill py-2">{p}</Button>
+                                })}
                             </Col>
                             
-                            <Col md={7} className="p-4 d-flex flex-column gap-4 justify-content-center">
-                                <h1 className="text-primary">Settings</h1>
-                                <div>
-                                    <Form.Control
-                                        type="text"
-                                        placeholder="Spieler Name"
-                                        value={playerName}
-                                        onChange={(e) => setPlayerName(e.target.value)}
-                                        className="bg-secondary text-light border-0 mb-2 rounded-3"
-                                    />
-                                    <Button variant="primary" className="w-100 text-dark fw-bold rounded-3">Spieler Name ändern</Button>
-                                </div>
-                            
-                                <div>
-                                    <Form.Label className="text-info fw-bold mb-1">Schwierigkeitsgrad</Form.Label>
-                                    <Form.Range
-                                        min={1}
-                                        max={3}
-                                        step={1}
-                                        value={difficulty}
-                                        onChange={(e) => setDifficulty(Number(e.target.value))}
-                                    />
-                                    <div className="d-flex justify-content-between text-secondary small px-1 mt-1">
-                                        <span className={difficulty === 1 ? 'text-light fw-bold' : ''}>Leicht</span>
-                                        <span className={difficulty === 2 ? 'text-light fw-bold' : ''}>Normal</span>
-                                        <span className={difficulty === 3 ? 'text-light fw-bold' : ''}>Schwer</span>
-                                    </div>
-                                </div>
-
-                                <div className="d-flex flex-column align-items-center justify-content-between mt-2 p-3 bg-secondary bg-opacity-25 rounded-3">
-                                    <div className="text-info fw-bold">Spielfeld Größe</div>
-                                    <div className="d-flex align-items-center gap-3">
-                                        <span className={`small ${!isLargeField ? 'text-light fw-bold' : 'text-secondary'}`}>Klein</span>
-                                        <Form.Check
-                                            type="switch"
-                                            id="field-size-switch"
-                                            checked={isLargeField}
-                                            onChange={(e) => setIsLargeField(e.target.checked)}
-                                            className="fs-5 m-0"
-                                        />
-                                        <span className={`small ${isLargeField ? 'text-light fw-bold' : 'text-secondary'}`}>Groß</span>
-                                    </div>
-                                </div>
+                            <Col md={7} className="p-3 d-flex flex-column gap-1 justify-content-center">
+                                <SettingComponent manager={manager} id={userId} roomId={roomId} isAdmin={true} ></SettingComponent>
                             </Col>
                         </Row>
                         <Row className="m-4">
-                            <Button variant="outline-secondary" className="w-100 text-info fw-bold rounded-3">Game Starten</Button>
+                            <Button variant="outline-secondary" className="w-100 text-info fw-bold rounded-3"
+                                onClick={() => {
+                                    setGame(manager.startGame(roomId));
+                                }}
+                            >Game Starten</Button>
                         </Row>
                     </Card.Body>
                 </Card>

@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
 import Game from "../backend/objects/Game";
-import PlayerInputController from "../backend/objects/PlayerInputController";
 import type { GameStateDto } from "@project/utils";
 import Canvas from "./CanvasComponent";
-import { Card, Col, Container, ListGroup, ProgressBar, Row, Badge } from "react-bootstrap";
+import { Card, Col, Container, ListGroup, ProgressBar, Row, Badge, Spinner } from "react-bootstrap";
+import { useEffect, useMemo } from "react";
 
 const formatMilliseconds = (ms: number): string => {
     const totalSeconds = Math.floor(ms / 1000);
@@ -13,6 +12,33 @@ const formatMilliseconds = (ms: number): string => {
 };
 
 export default function GameComponent({gameState, game}: {gameState: GameStateDto, game: Game}) {
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (!e.key) return;
+            e.preventDefault();
+            game.getPlayerController().addInputPlayerKey(0, e.key);
+        };
+
+        const handleKeyUp = (e: KeyboardEvent) => {
+            if (!e.key) return;
+            game.getPlayerController().releaseInputPlayerKey(0, e.key);
+        };
+
+        const handleClick = () => {
+            game.getPlayerController().clearPlayerKeys(0);
+        };  
+        window.addEventListener("click", handleClick);
+        window.addEventListener("keydown", handleKeyDown);
+        window.addEventListener("keyup", handleKeyUp);
+        return () => {
+            window.removeEventListener("click", handleClick);
+            window.removeEventListener("keydown", handleKeyDown);
+            window.removeEventListener("keyup", handleKeyUp);
+        };
+    }, [game]);
+
+
     const formattedGameTime = gameState?.setting.gameTime ? formatMilliseconds(gameState.setting.gameTime) : "0:00";
     const formattedTimeLeft = gameState?.timeLeft ? formatMilliseconds(gameState.timeLeft) : "0:00";
     
@@ -20,11 +46,42 @@ export default function GameComponent({gameState, game}: {gameState: GameStateDt
         ? (gameState.timeLeft / gameState.setting.gameTime) * 100 
         : 0;
 
-    const canvasSize = gameState?.setting.canvas.wallSize == 40 ? 520 : 510;
+    const wallSize = gameState?.setting.canvas.wallSize;
+    const canvasSize = useMemo(() => {
+        switch (wallSize) {
+            case 15: 
+                return 525;
+            case 30: 
+                return 510;
+            default:
+                return 520;
+        }
+    }, [wallSize]);
 
     return (
         <>
             <Container fluid className="py-4 min-vh-100 d-flex align-items-center" style={{ backgroundColor: "#1e1e2f" }}>
+
+                {gameState.type === "config" &&
+                    (<div
+                        style={{
+                            position: "fixed",
+                            top: 0,
+                            left: 0,
+                            width: "100vw",
+                            height: "100vh",
+                            backgroundColor: "rgba(30, 30, 47, 0.9)",
+                            zIndex: 9999,
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center"
+                        }}
+                    >
+                        <Spinner animation="border" variant="primary" style={{ width: "5rem", height: "5rem", borderWidth: "0.3rem" }} />
+                        <h2 className="text-light mt-4 fw-bold">Warte auf Spielstart...</h2>
+                    </div>)
+                }
                 <Row className="w-100 justify-content-center align-items-center">
                     <Col xs={12} xl={3} className="d-flex justify-content-center justify-content-xl-end mb-4 mb-xl-0">
                         <Card className="bg-dark text-light shadow-lg rounded-4" style={{ width: '18rem', minHeight: '25rem', border: 'none' }}>
@@ -33,11 +90,11 @@ export default function GameComponent({gameState, game}: {gameState: GameStateDt
                                 <ListGroup variant="flush">
                                     {gameState?.players.map(p => {
                                         return (
-                                            <ListGroup.Item className="bg-transparent text-light border-secondary d-flex justify-content-between align-items-center px-0">
+                                            <ListGroup.Item key={p.id} className="bg-transparent text-light border-secondary d-flex justify-content-between align-items-center px-0">
                                                 {p.name} 
                                                 <Badge bg={
-                                                            p.lives == 3 
-                                                                ? "success" 
+                                                            p.lives >= 3 
+                                                                ? "success"
                                                                 : p.lives != 0 
                                                                 ? "warning" 
                                                                 : "danger" 
@@ -59,11 +116,12 @@ export default function GameComponent({gameState, game}: {gameState: GameStateDt
                     <Col xs={12} xl={3} className="d-flex justify-content-center justify-content-xl-start mt-4 mt-xl-0">
                         <Card className="bg-dark text-light shadow-lg rounded-4" style={{ width: '18rem', minHeight: '25rem', border: 'none' }}>
                             <Card.Body className="p-4 d-flex flex-column gap-3">
+                                
                                 <div>
                                     <Card.Title className="text-info fw-bold mb-2 fs-5">SPIELZEIT</Card.Title>
                                     <div className="d-flex justify-content-between mb-2">
-                                        <span>{formattedGameTime}</span>
                                         <span className="text-secondary">{formattedTimeLeft}</span>
+                                        <span>{formattedGameTime}</span>
                                     </div>
                                     <ProgressBar variant="info" now={timeProgress} className="rounded-pill bg-secondary" style={{ height: "8px" }} />
                                 </div>

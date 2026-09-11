@@ -1,3 +1,4 @@
+import type Game from "../frontend/src/game/backend/objects/Game";
 import type BoundingBox from "./BoundingBox";
 import type Vector from "./Vector";
 
@@ -30,11 +31,13 @@ export type Canvas = {
 }
 
 export type RoomSetting = {
+    roomId: string,
     players: string[],
     gameTime: number;
     difficulty: number,
     canvasSize: number,
     roomSize: number
+    activeGame?: Game,
 }
 
 export type GameSetting = {
@@ -45,6 +48,7 @@ export type GameSetting = {
 }
 
 export type GameStateDto = {
+    roomId: string;
     type: "config" | "running" | "ending";
     setting: GameSetting;
     timeLeft: number;

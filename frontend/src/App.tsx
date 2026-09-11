@@ -1,9 +1,8 @@
-import GameComponent from './game/components/GameComponent'
-import SettingComponent from './game/components/SettingsComponent'
+import RoomComponent from './game/components/RoomComponent'
 
 export default function App() {
 
     return (
-        <SettingComponent/>
+        <RoomComponent/>
     )
 }
