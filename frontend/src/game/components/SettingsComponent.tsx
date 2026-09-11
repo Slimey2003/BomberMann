@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button, Form } from "react-bootstrap";
 import type GameManager from "../backend/GameManager";
 
-function SettingSlider({ label, min, max, value, onChange, labels }: { label: string, min: number, max: number, value: number, onChange: (val: number) => void, labels: string[] }) {
+export function SettingSlider({ label, min, max, value, onChange, labels }: { label: string, min: number, max: number, value: number, onChange: (val: number) => void, labels: string[] }) {
     return (
         <div className="d-flex flex-column align-items-center justify-content-between mt-1 p-2 bg-secondary bg-opacity-25 rounded-3">
             <div className="w-100">

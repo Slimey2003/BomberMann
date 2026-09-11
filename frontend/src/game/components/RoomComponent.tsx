@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, Card, Col, Container, Row } from "react-bootstrap";
 import GameManager from "../backend/GameManager";
 import SettingComponent from "./SettingsComponent";
@@ -6,20 +6,14 @@ import type Game from "../backend/objects/Game";
 import type { GameStateDto } from "@project/utils";
 import GameComponent from "./GameComponent";
 
-export default function RoomComponent() {
-    const manager = useMemo(() => new GameManager(), []);
+export default function RoomComponent({userId, roomId, manager}: {userId: number, roomId: string, manager: GameManager}) {
     const [gameState, setGameState] = useState<GameStateDto | null>(null);
     const [game, setGame] = useState<Game | null>(null);
     const [players, setPlayers] = useState<string[]>([""]);
-    const [userId, setUserId] = useState<number | undefined>(undefined);
-    const [roomId, setRoomId] = useState<string | undefined>(undefined);
 
     useEffect(() => {
-        const setting = manager.createRoom("player1", 1);
-        setUserId(0);
-        setPlayers(setting.players);
-        setRoomId(setting.roomId);
-    }, [manager]);
+        setPlayers(manager.getSetting(roomId).players);
+    }, [manager, manager.getSetting(roomId)]);
 
     useEffect(() => {
         if (!game) return;
