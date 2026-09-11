@@ -8,13 +8,14 @@ import type Player from "./moveable/Player";
 import type EffectCard from "./effect/EffectCard";
 import type Bomb from "./moveable/Bombs";
 import type ExplodeBomb from "./moveable/ExplodeBomb";
-import type { BombDto, Canvas, EffectDto, GameSetting, GameStateDto, PlayerDto, WallDto } from "@project/utils";
+import type { BombDto, EffectDto, GameSetting, GameStateDto, PlayerDto, WallDto } from "@project/utils";
 import BreakableWall from "./wall/BreakableWall";
 
 export default class Game {
     private static gameTickPerSec: number = 20;
 
     private gameState: "config" | "running" | "ending" = "config";
+    private roomId: string;
     private setting: GameSetting;
 
     private gameTickScheduler: GameTickScheduler;
@@ -23,7 +24,8 @@ export default class Game {
     private bombController: BombController;
     private effectController: EffectController;
 
-    constructor(playerNames: string[], setting: GameSetting) {
+    constructor(roomId:string, playerNames: string[], setting: GameSetting) {
+        this.roomId = roomId;
         this.setting = setting;
         this.gameTickScheduler = new GameTickScheduler(Game.gameTickPerSec);
         this.wallController = new WallController(this.setting.canvas, this.setting.blockProbability);
@@ -34,22 +36,6 @@ export default class Game {
         this.playerController.init(this.wallController, this.playerController, this.bombController, this.effectController);
         this.bombController.init(this.wallController, this.playerController, this.bombController, this.effectController);
         this.effectController.init(this.wallController, this.playerController, this.bombController, this.effectController);
-    }
-
-    static generateBasisGame(): Game {
-        return new Game(["Spieler1"], {
-            gameTime: 600_000,
-            playerMaxLive: 3,
-            blockProbability: 0.6,
-            canvas: {
-                height: 520,
-                width: 520,
-                playerSize: 40, //30 klein 40 groß
-                wallSize: 40, //30 klein 40 groß
-                bombSize: 30, // 20 klein 30 groß
-                effectSize: 35 // 27.5 ddd klein 35 groß
-            },
-        });
     }
 
     public getWallController() {
@@ -173,6 +159,7 @@ export default class Game {
             }
         });
         return {
+            roomId: this.roomId,
             type: this.gameState,
             setting: this.setting,
             timeLeft: (this.gameTickScheduler.getStartTime() + this.setting.gameTime) - this.gameTickScheduler.getLastTime(),

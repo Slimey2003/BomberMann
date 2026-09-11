@@ -8,11 +8,23 @@ import PlayerInputController from "../PlayerInputController";
 
 export default class PlayerController extends Controller {
     private players: Player[];
+    private movementMultiplayer: number;
 
     constructor(playerNames: string[], lives: number, canvas: Canvas) {
         super(canvas);
         this.players = [];
         this.genPlayer(playerNames, lives, canvas);
+        switch (canvas.playerSize) {
+            case 40:
+            case 30:
+                this.movementMultiplayer = 10;
+                break;
+            case 15:
+                this.movementMultiplayer = 5;
+                break;
+            default:
+                this.movementMultiplayer = 10;
+        }
     }
 
     public genPlayer(playerNames: string[], lives: number, canvas: Canvas): void {
@@ -43,9 +55,21 @@ export default class PlayerController extends Controller {
         }
     }
 
+    public addInputPlayerKey(playerId: number, keycode: string) {
+        this.players[playerId].getInputController().addKey(keycode);
+    }
+
+    public releaseInputPlayerKey(playerId: number, keycode: string) {
+        this.players[playerId].getInputController().removeKey(keycode);
+    }
+
+    public clearPlayerKeys(playerId: number) {
+        this.players[playerId].getInputController().clearKeys();
+    }
+
     public updateMovement() {
         for (const player of this.players) {
-            player.setVelocity(player.getInputController().getLastDirection().getVector().scale(10));
+            player.setVelocity(player.getInputController().getLastDirection().getVector().scale(this.movementMultiplayer));
             const movement = player.getMovement();
             this.playerMovement(player, movement);
             super.getEffectController().pickUp(player);

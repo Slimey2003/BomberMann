@@ -37,44 +37,19 @@ export default class Direction {
     public static fromKey(key: string): Direction {
         switch (key.toLowerCase()) {
             case "w":
-            case "W":
             case "arrowup":
                 return Direction.NORTH;
 
             case "d":
-            case "D":
             case "arrowright":
                 return Direction.EAST;
 
             case "s":
-            case "S":
             case "arrowdown":
                 return Direction.SOUTH;
 
             case "a":
-            case "A":
             case "arrowleft":
-                return Direction.WEST;
-        }
-        return Direction.NONE;
-    }
-
-    public static fromKeyCode(key: number): Direction {
-        switch (key) {
-            case 87:
-            case 38:
-                return Direction.NORTH;
-
-            case 68:
-            case 39:
-                return Direction.EAST;
-
-            case 83:
-            case 40:
-                return Direction.SOUTH;
-
-            case 65:
-            case 37:
                 return Direction.WEST;
         }
         return Direction.NONE;
