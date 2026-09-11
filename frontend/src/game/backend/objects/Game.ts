@@ -14,7 +14,7 @@ import BreakableWall from "./wall/BreakableWall";
 export default class Game {
     private static gameTickPerSec: number = 20;
 
-    private gameState: "config" | "running" | "ending" = "config";
+    private gameState: "loading" | "running" | "ending" = "loading";
     private roomId: string;
     private setting: GameSetting;
 
