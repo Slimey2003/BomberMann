@@ -33,6 +33,10 @@ export default class GameManager {
         this.roomSettings[roomId].gameTime = time;
     }
 
+    public getSetting(roomId: string) {
+        return this.roomSettings[roomId];
+    }
+
     public addPlayer(roomId: string, name: string): number {
         const setting = this.roomSettings[roomId];
         setting.players.push(name);

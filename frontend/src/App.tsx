@@ -1,8 +1,8 @@
-import RoomComponent from './game/components/RoomComponent'
+import DashboardComponent from './game/components/DashboardComponent'
 
 export default function App() {
 
     return (
-        <RoomComponent/>
+        <DashboardComponent/>
     )
 }
