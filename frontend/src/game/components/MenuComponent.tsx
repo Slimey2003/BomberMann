@@ -13,7 +13,7 @@ export default function MainMenuComponent({
     const [joinPlayerName, setJoinPlayerName] = useState("");
 
     const [createPlayerName, setCreatePlayerName] = useState("");
-    const [playerSize, setPlayerSize] = useState(2);
+    const [playerSize, setPlayerSize] = useState(1);
 
     return (
         <Container fluid className="py-4 min-vh-100 d-flex flex-column align-items-center justify-content-center" style={{ backgroundColor: "#1e1e2f" }}>
@@ -33,8 +33,8 @@ export default function MainMenuComponent({
                                 <Form.Group>
                                     <SettingSlider
                                         label="Spieler Anzahl"
-                                        min={0}
-                                        max={3}
+                                        min={1}
+                                        max={4}
                                         value={playerSize}
                                         onChange={(val) => {
                                             setPlayerSize(val);

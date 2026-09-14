@@ -7,6 +7,7 @@ import BoundingBox from "@project/utils/BoundingBox";
 import PlayerInputController from "../PlayerInputController";
 
 export default class PlayerController extends Controller {
+    
     private players: Player[];
     private movementMultiplayer: number;
 
@@ -25,6 +26,14 @@ export default class PlayerController extends Controller {
             default:
                 this.movementMultiplayer = 10;
         }
+    }
+
+    public isLastPlayerStanding(): boolean {
+        if (this.players.length == 1) {
+            return this.players[0].isDead();
+        }
+        const lifePlayers: Player[] = this.players.filter(p => !p.isDead);
+        return lifePlayers.length <= 1;
     }
 
     public genPlayer(playerNames: string[], lives: number, canvas: Canvas): void {

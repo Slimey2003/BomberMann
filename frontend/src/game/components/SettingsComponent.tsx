@@ -49,7 +49,10 @@ export default function SettingComponent({roomId, id, manager, isAdmin}: {roomId
                     variant="primary" 
                     size="sm"
                     className="w-100 text-dark fw-bold rounded-3"
-                    onClick={() => manager.updatePlayerName(roomId, id, playerName)}
+                    onClick={() => {
+                        if (playerName.length === 0) return;
+                        manager.updatePlayerName(roomId, id, playerName);
+                    } }
                 >
                     Spieler Name ändern
                 </Button>
