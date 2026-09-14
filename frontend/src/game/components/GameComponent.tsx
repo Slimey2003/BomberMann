@@ -1,4 +1,4 @@
-import Game from "../backend/objects/Game";
+import Game from "../../../../backend/src/bomberman/objects/Game";
 import { formatMilliseconds, type GameStateDto } from "@project/utils";
 import Canvas from "./CanvasComponent";
 import { Card, Col, Container, ListGroup, ProgressBar, Row, Badge } from "react-bootstrap";

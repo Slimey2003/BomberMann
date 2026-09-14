@@ -22,5 +22,5 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"]
+  "include": ["src", "../backend/src/bomberman/o../backend/src/bomberman/controllers/EffectController.tstrol../backend/src/bomberman/controllers/PlayerController.tstrol../backend/src/bomberman/controllers/Controller.tstroller.ts", "../backend/src/bomberman/util/DelayedQueue.ts", "../backend/src/utils/GameTickSchedu../backend/src/bomberman/controllers/PlayerInputController.tstroller.ts"]
 }

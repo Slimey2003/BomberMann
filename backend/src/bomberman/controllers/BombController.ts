@@ -1,15 +1,19 @@
-import Controller from "../Controller";
-import DelayQueue from "../utils/DelayedQueue";
+import Controller from "./Controller";
+import DelayQueue from "../util/DelayedQueue";
 import Vector from "@project/utils/Vector";
-import type Wall from "../wall/Wall";
-import Bomb from "./Bombs";
-import ExplodeBomb from "./ExplodeBomb";
+import type Wall from "../objects/wall/Wall";
+import Bomb from "../objects/moveable/Bombs";
+import ExplodeBomb from "../objects/moveable/ExplodeBomb";
 import { EffectType } from "@project/utils";
 
 export default class BombController extends Controller {
     private placedBombs: DelayQueue<Bomb> = new DelayQueue();
     private explodeBombs: DelayQueue<ExplodeBomb> = new DelayQueue();
+    private placedCount: number = 0;
 
+    public getPlaceCount(): number {
+        return this.placedCount;
+    }
 
     //Add Bomb
 
@@ -17,17 +21,25 @@ export default class BombController extends Controller {
         this.placedBombs.put(bomb);
     }
 
-    public placeBomb(playerId: number) {
-        const player = super.getPlayerController().getPlayers()[playerId];
-        
+    public placeBomb(playerId: string) {
+        const player = super.getPlayerController().getPlayer(playerId);
+        if (!player) return;
+
         const playerPos = player.getPosition();
         const newBomb = new Bomb(player.getId(), this.modifyPosition(playerPos), this.canvas.bombSize, this.canvas.bombSize);
+        let playerBombCount = 0;
         for (const bomb of this.getPlacedBombs()) {
+            if (bomb.getPlayerId() == playerId) {
+                playerBombCount++;
+            }
             if (newBomb.getBox().overlaps(bomb.getBox())) {
                 return;
             }
         }
+        if (playerBombCount >= player.getMaxPlacedBomb()) return; //Max 
+        
         this.placedBombs.put(newBomb);
+        this.placedCount++;
     }
 
     //Pick Bombs
@@ -53,7 +65,7 @@ export default class BombController extends Controller {
             if (!trigger) break; //(Save is Save xD)
 
             for (const bomb of this.placedBombs.getValues()) {
-                if (bomb.getId() == trigger.getBomb().getId()) continue;
+                if (bomb.getId() == trigger.getBomb().getId() || !bomb.getMovement().equals(Vector.nullVector)) continue;
                 for (const vec of trigger.getCalculatedRange()) {
                     if (bomb.getBox().intersects(trigger.getBomb().getPosition(), vec) != null) {
                         const explode: ExplodeBomb = this.modifyBomb(bomb);
@@ -72,7 +84,7 @@ export default class BombController extends Controller {
 
     public triggerExplodeTick() {
         for (const explode of this.explodeBombs.getValues()) {
-            this.getPlayerController().playerTakeDamage(explode.getBomb().getPosition(), explode.getCalculatedRange());
+            this.getPlayerController().playerTakeDamage(explode.getPlayerTakeDamage(), explode.getBomb().getPosition(), explode.getCalculatedRange());
         }
     }
 
@@ -82,7 +94,7 @@ export default class BombController extends Controller {
             if (!explodeBomb) break;
             for (const vec of explodeBomb.getCalculatedRange()) {
                 const eff: number | undefined = this.getWallController().expositionOnVector(explodeBomb.getStrange(), vec);
-                if (!eff) continue;
+                if (eff == undefined) continue;
                 this.getEffectController().placeEffect(vec, eff);
             }
         }
@@ -117,12 +129,11 @@ export default class BombController extends Controller {
             let wall: Wall | undefined = super.getWallController().getCollidingWall(bomb.getPosition(), movement);
             
             if (!wall) {
-                wall = super.getWallController().overlapsMoveableWithWall(bomb.getMovedBox());
+                wall = super.getWallController().overlapsMoveableWithWall(bomb.getMovedBox(Vector.nullVector));
             }
-            
-            bomb.updateMove(wall);
+            bomb.updateMove(Vector.nullVector);
             if (wall) {
-                const safePos = bomb.getPosition().subtract(movement.normalize().scale(1));
+                const safePos = bomb.getPosition().subtract(movement.scale(1));
                 
                 bomb.setVelocity(Vector.nullVector);
                 bomb.setPosition(this.modifyPosition(safePos));
@@ -134,8 +145,13 @@ export default class BombController extends Controller {
         for (const player of super.getPlayerController().getPlayers()) {
             for (const bomb of this.getPlacedBombs()) {
                 if (player.getBox().overlaps(bomb.getBox())) {
-                    if (bomb.noCollision()) continue;
-                    bomb.setVelocity(player.getMovement().normalize().scale(20));
+                    const playerMovement = player.getMovement()
+                    const bombMovement = bomb.getMovement();
+                    if (bomb.noCollision() 
+                        || playerMovement.equals(Vector.nullVector)
+                        || !bombMovement.equals(Vector.nullVector)) continue;
+                    console.log(playerMovement.scale(2));
+                    bomb.setVelocity(playerMovement.scale(2));
                     break;
                 }
             }
@@ -145,17 +161,24 @@ export default class BombController extends Controller {
     //Modify
 
     public modifyBomb(bomb: Bomb): ExplodeBomb {
-        const player = this.getPlayerController().getPlayers()[bomb.getPlayerId()];
-        const effRange = player.getEffect(EffectType.RANGE);
-        const effStrange = player.getEffect(EffectType.STRANGE);
+        const player = this.getPlayerController().getPlayer(bomb.getPlayerId());
+        
+        bomb.setVelocity(Vector.nullVector);
+        bomb.setPosition(this.modifyPosition(bomb.getPosition()));
         const explode = new ExplodeBomb(bomb);
-        if (effRange) {
-            explode.addRange(effRange.getScale());
+        if (player) {
+            const effRange = player.getEffect(EffectType.RANGE);
+            const effStrange = player.getEffect(EffectType.STRANGE);
+            if (effRange) {
+                explode.addRange(effRange.getScale());
+            }
+            if (effStrange) {
+                explode.addStrange(effStrange.getScale());
+            }
         }
-        if (effStrange) {
-            explode.addStrange(effStrange.getScale());
-        }
+
         explode.setCalculatedRange(this.getWallController().getExpositionRange(bomb.getPosition(), explode.getRange()));
+
         return explode;
     }
 

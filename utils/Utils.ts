@@ -1,6 +1,6 @@
-import type Game from "../frontend/src/game/backend/objects/Game";
-import type BoundingBox from "./BoundingBox";
-import type Vector from "./Vector";
+import BoundingBox from "./BoundingBox";
+import Vector from "./Vector";
+import { z } from "zod";
 
 export function getRandomInt(min: number, max: number) {
     if (!Number.isInteger(min) || !Number.isInteger(max)) {
@@ -14,6 +14,13 @@ export function getRandomInt(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+export function formatMilliseconds(ms: number): string {
+    const totalSeconds = Math.floor(ms / 1000);
+    const minutes = Math.max(0, Math.floor(totalSeconds / 60));
+    const seconds = Math.max(0, totalSeconds % 60);
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+};
+
 export const EffectType = {
     SPEED: 0,
     STRANGE: 1,
@@ -21,81 +28,101 @@ export const EffectType = {
     STACK: 3,
 };
 
-export type Canvas = {
-    height: number;
-    width: number;
-    wallSize: number;
-    playerSize: number;
-    bombSize: number;
-    effectSize: number;
-}
+export const VectorSchema = z.object({
+    x: z.number(),
+    y: z.number()
+}).transform((val) => new Vector(val.x, val.y));
 
-export type RoomSetting = {
-    roomId: string,
-    players: string[],
-    gameTime: number;
-    difficulty: number,
-    canvasSize: number,
-    roomSize: number
-    activeGame?: Game,
-}
+export type VectorType = z.infer<typeof VectorSchema>;
 
-export type GameSetting = {
-    gameTime: number;
-    playerMaxLive: number;
-    canvas: Canvas;
-    blockProbability: number;
-}
+export const BoundingBoxSchema = z.object({
+    minX: z.number(),
+    minY: z.number(),
+    maxX: z.number(),
+    maxY: z.number()
+}).transform((val) => {
+    const width = val.maxX - val.minX;
+    const height = val.maxY - val.minY;
+    const centerX = val.minX + (width / 2);
+    const centerY = val.minY + (height / 2);
+    return new BoundingBox(new Vector(centerX, centerY), height, width);
+});
 
-export type GameStateDto = {
-    roomId: string;
-    type: "loading" | "running" | "ending";
-    setting: GameSetting;
-    timeLeft: number;
-    players: PlayerDto[];
-    bombs: BombDto[];
-    walls: WallDto[];
-    effects: EffectDto[];
-    pickedEffectCount: number;
-    bombPlaceCount: number;
-    maxEffects: number;
-    wallBreakableCount: number;
-    wallBreaksCount: number;
-};
+export type BoundingBoxType = z.infer<typeof BoundingBoxSchema>;
 
-export type PlayerDto = {
-    id: number;
-    name: string;
-    pos: Vector;
-    box: BoundingBox;
-    lives: number;
-    dead: boolean;
-};
+export const CanvasSchema = z.object({
+    height: z.number(),
+    width: z.number(),
+    wallSize: z.number(),
+    playerSize: z.number(),
+    bombSize: z.number(),
+    effectSize: z.number()
+});
+export type Canvas = z.infer<typeof CanvasSchema>;
 
-export type BombDto = {
-    id: string;
-    pos: Vector;
-    box: BoundingBox;
-    explode: Vector[];
-};
+export const RoomSettingSchema = z.object({
+    gameTime: z.number(),
+    difficulty: z.number(),
+    canvasSize: z.number(),
+    roomSize: z.number()
+});
+export type RoomSetting = z.infer<typeof RoomSettingSchema>;
 
-export type WallDto = {
-    pos: Vector;
-    breakable: boolean;
-    box: BoundingBox;
-    resistance?: number,
-    damage?: number,
-    eff?: number | undefined
-};
+export const GameSettingSchema = z.object({
+    gameTime: z.number(),
+    playerMaxLive: z.number(),
+    canvas: CanvasSchema,
+    blockProbability: z.number()
+});
+export type GameSetting = z.infer<typeof GameSettingSchema>;
 
-export type EffectDto = {
-    id: number;
-    pos: Vector;
-    box: BoundingBox;
-};
-export function formatMilliseconds(ms: number): string {
-    const totalSeconds = Math.floor(ms / 1000);
-    const minutes = Math.max(0, Math.floor(totalSeconds / 60));
-    const seconds = Math.max(0, totalSeconds % 60);
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-};
+export const PlayerDtoSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    pos: VectorSchema,
+    box: BoundingBoxSchema,
+    lives: z.number(),
+    dead: z.boolean()
+});
+export type PlayerDto = z.infer<typeof PlayerDtoSchema>;
+
+export const BombDtoSchema = z.object({
+    id: z.string(),
+    pos: VectorSchema,
+    box: BoundingBoxSchema,
+    explode: z.array(VectorSchema)
+});
+export type BombDto = z.infer<typeof BombDtoSchema>;
+
+export const WallDtoSchema = z.object({
+    pos: VectorSchema,
+    breakable: z.boolean(),
+    box: BoundingBoxSchema,
+    resistance: z.number().optional(),
+    damage: z.number().optional()
+});
+export type WallDto = z.infer<typeof WallDtoSchema>;
+
+export const EffectDtoSchema = z.object({
+    id: z.number(),
+    pos: VectorSchema,
+    box: BoundingBoxSchema
+});
+export type EffectDto = z.infer<typeof EffectDtoSchema>;
+
+export const GameStateDtoSchema = z.object({
+    roomId: z.string(),
+    type: z.enum(["loading", "running", "ending"]),
+    setting: GameSettingSchema,
+    timeLeft: z.number(),
+    players: z.array(PlayerDtoSchema),
+    bombs: z.array(BombDtoSchema),
+    walls: z.array(WallDtoSchema),
+    effects: z.array(EffectDtoSchema),
+    pickedEffectCount: z.number(),
+    bombPlaceCount: z.number(),
+    maxEffects: z.number(),
+    wallBreakableCount: z.number(),
+    wallBreaksCount: z.number()
+});
+export type GameStateDto = z.infer<typeof GameStateDtoSchema>;
