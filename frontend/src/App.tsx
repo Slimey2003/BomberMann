@@ -1,8 +1,8 @@
-import Canvas from './game/components/CanvasComponent'
+import DashboardComponent from './game/components/DashboardComponent'
 
 export default function App() {
 
     return (
-        <Canvas/>
+        <DashboardComponent/>
     )
 }
