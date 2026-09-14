@@ -114,9 +114,7 @@ export default class BombController extends Controller {
         for (const bomb of this.placedBombs.getValues()) {
             const movement = bomb.getMovement();
             if (movement.equals(Vector.nullVector)) continue;
-
-            const futureVector = bomb.getPosition().add(movement);
-            let wall: Wall | undefined = super.getWallController().getCollidingWall(bomb.getBox(), futureVector);
+            let wall: Wall | undefined = super.getWallController().getCollidingWall(bomb.getPosition(), movement);
             
             if (!wall) {
                 wall = super.getWallController().overlapsMoveableWithWall(bomb.getMovedBox());

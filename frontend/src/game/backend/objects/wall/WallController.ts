@@ -9,6 +9,8 @@ export default class WallController {
     private canvas: Canvas;
     private blockProbability: number;
     private walls: Map<string, Wall>;
+    private breakableWallCount = 0;
+    private wallBreaksCount = 0;
 
     constructor(canvas: Canvas, blockProbability: number) {
         this.canvas = canvas;
@@ -19,6 +21,14 @@ export default class WallController {
 
     public getWalls(): Map<string, Wall> {
         return this.walls;
+    }
+
+    public getBreakableWallCount() {
+        return this.breakableWallCount;
+    }
+
+    public getWallBreaksCount() {
+        return this.wallBreaksCount;
     }
 
     public getCollidingWall(start: Vector, movement: Vector): Wall | undefined {
@@ -54,6 +64,7 @@ export default class WallController {
             wall.addDamage(strange);
             if (wall.isDestroyed()) {
                 this.walls.delete(hashKey);
+                this.wallBreaksCount++;
                 return wall.getEffect();
             }
         }
@@ -67,8 +78,9 @@ export default class WallController {
 
     public calculateRange(pos: Vector, range: number, dir: Direction): Vector {
         const rangeVectors: Vector[] = [];
-        for (let i = 5; i <= range; i += 5) {
-            rangeVectors.push(pos.add(dir.getVector().scale(i)));
+        for (let i = 1; i <= range; i++) {
+            const distanceInPixels = i * (this.canvas.wallSize);
+            rangeVectors.push(pos.add(dir.getVector().scale(distanceInPixels)));
         }
         
         let vecRange: Vector = new Vector(0, 0);
@@ -120,6 +132,7 @@ export default class WallController {
                 }
                 
                 this.walls.set(hashKey, new BreakableWall(`${x}-${y}`, pos, size, size));
+                this.breakableWallCount++
             }
         }
     }

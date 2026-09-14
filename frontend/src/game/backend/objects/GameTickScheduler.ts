@@ -1,6 +1,7 @@
 export default class GameTickScheduler {
     private readonly tickRate: number;
     private lastTime = 0;
+    private startTime = 0;
     private intervalId: ReturnType<typeof setInterval> | undefined;
     private tickCounter = 0;
     private execute: (deltaTime: number, counter: number) => void = () => {};
@@ -20,10 +21,15 @@ export default class GameTickScheduler {
         }
 
         this.execute = run;
+        this.startTime = Date.now();
         this.lastTime = Date.now();
         this.tickCounter = 0;
 
         this.intervalId = setInterval(() => this.loop(), this.tickRate);
+    }
+
+    public getStartTime() {
+        return this.startTime;
     }
 
     public getLastTime() {

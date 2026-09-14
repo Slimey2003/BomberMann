@@ -8,16 +8,15 @@ import type Player from "./moveable/Player";
 import type EffectCard from "./effect/EffectCard";
 import type Bomb from "./moveable/Bombs";
 import type ExplodeBomb from "./moveable/ExplodeBomb";
-import type { BombDto, Canvas, EffectDto, GameStateDto, PlayerDto, WallDto } from "@project/utils";
+import type { BombDto, EffectDto, GameSetting, GameStateDto, PlayerDto, WallDto } from "@project/utils";
 import BreakableWall from "./wall/BreakableWall";
 
 export default class Game {
-    private static blockProbability: number = 0.6;
-    private static playerLives: number = 3;
-    private static gameTickPerSec: number = 4;
-    private static gameTime: number = 600_000;//10 Min
+    private static gameTickPerSec: number = 20;
 
-    private gameState: "config" | "running" | "ending" = "config";
+    private gameState: "loading" | "running" | "ending" = "loading";
+    private roomId: string;
+    private setting: GameSetting;
 
     private gameTickScheduler: GameTickScheduler;
     private wallController: WallController;
@@ -25,27 +24,18 @@ export default class Game {
     private bombController: BombController;
     private effectController: EffectController;
 
-    constructor(playerNames: string[], canvas: Canvas) {
+    constructor(roomId:string, playerNames: string[], setting: GameSetting) {
+        this.roomId = roomId;
+        this.setting = setting;
         this.gameTickScheduler = new GameTickScheduler(Game.gameTickPerSec);
-        this.wallController = new WallController(canvas, Game.blockProbability);
-        this.playerController = new PlayerController(playerNames, Game.playerLives, canvas);
-        this.bombController = new BombController(canvas);
-        this.effectController = new EffectController(canvas);
+        this.wallController = new WallController(this.setting.canvas, this.setting.blockProbability);
+        this.playerController = new PlayerController(playerNames, this.setting.playerMaxLive, this.setting.canvas);
+        this.bombController = new BombController(this.setting.canvas);
+        this.effectController = new EffectController(this.setting.canvas);
 
         this.playerController.init(this.wallController, this.playerController, this.bombController, this.effectController);
         this.bombController.init(this.wallController, this.playerController, this.bombController, this.effectController);
         this.effectController.init(this.wallController, this.playerController, this.bombController, this.effectController);
-    }
-
-    static generateBasisGame(): Game {
-        return new Game(["Spieler1", "Spieler2"], {
-            height: 1000, 
-            width: 1000,
-            playerSize: 50, 
-            wallSize: 75, 
-            bombSize: 50,
-            effectSize: 50
-        });
     }
 
     public getWallController() {
@@ -83,12 +73,10 @@ export default class Game {
 
         const pController = this.getPlayerController();
         const bController = this.getBombController();
-
-        if (counter % 2 === 0) {
-            pController.updateMovement();
-            bController.playerCollidedWithBomb();
-            bController.updateMovement();
-        }
+        
+        pController.updateMovement();
+        bController.updateMovement();
+        bController.playerCollidedWithBomb();
 
         if (counter % 4 === 0) {
             bController.triggerExplosion();
@@ -98,8 +86,10 @@ export default class Game {
     };
 
     public gameOver() {
-        if (Game.gameTime <= (this.gameTickScheduler.getLastTime() - Date.now())
-            || this.playerController.getPlayers().every(p => p.isDead())) {
+        if (
+            (this.gameTickScheduler.getStartTime() + this.setting.gameTime) - this.gameTickScheduler.getLastTime() <= 0
+            || this.playerController.isLastPlayerStanding()
+        ) {
             this.gameStop();
             this.gameState = "ending";
             return true;
@@ -115,6 +105,16 @@ export default class Game {
         const effects: EffectCard[] = this.effectController.getEffectCards();
 
         const wallDtos: WallDto[] = [...walls.values()].map(w => {
+            if (w instanceof BreakableWall) {
+                return {
+                    pos: w.getPosition(),
+                    breakable: true,
+                    resistance: w.getResistance(),
+                    damage: w.getDamage(),
+                    box: w.getBox(), 
+                    eff: w.getEffect()
+                }
+            }
             return {
                 pos: w.getPosition(),
                 breakable: w instanceof BreakableWall,
@@ -155,20 +155,25 @@ export default class Game {
 
         const effectDtos: EffectDto[] = effects.map(e => {
             return {
+                id: e.getEffectId(),
                 pos: e.getPosition(),
-                effect: e.getEffectId(),
                 box: e.getBox()
             }
         });
-
         return {
+            roomId: this.roomId,
             type: this.gameState,
-            gameTime: Game.gameTime,
-            timeLeft: this.gameTickScheduler.getLastTime(),
+            setting: this.setting,
+            timeLeft: (this.gameTickScheduler.getStartTime() + this.setting.gameTime) - this.gameTickScheduler.getLastTime(),
             players: playerDtos,
             bombs: bombsDtos,
             walls: wallDtos,
-            effects: effectDtos
+            effects: effectDtos,
+            pickedEffectCount: this.getEffectController().getPickedEffectCount(),
+            bombPlaceCount: this.getBombController().getPlaceCount(),
+            maxEffects: this.getEffectController().getMaxEffectsCards(),
+            wallBreakableCount: this.getWallController().getBreakableWallCount(),
+            wallBreaksCount: this.getWallController().getWallBreaksCount()
         }
     }
     

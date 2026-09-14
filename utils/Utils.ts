@@ -1,3 +1,4 @@
+import type Game from "../frontend/src/game/backend/objects/Game";
 import type BoundingBox from "./BoundingBox";
 import type Vector from "./Vector";
 
@@ -17,6 +18,7 @@ export const EffectType = {
     SPEED: 0,
     STRANGE: 1,
     RANGE: 2,
+    STACK: 3,
 };
 
 export type Canvas = {
@@ -28,14 +30,37 @@ export type Canvas = {
     effectSize: number;
 }
 
-export type GameStateDto = {
-    type: "config" | "running" | "ending";
+export type RoomSetting = {
+    roomId: string,
+    players: string[],
     gameTime: number;
+    difficulty: number,
+    canvasSize: number,
+    roomSize: number
+    activeGame?: Game,
+}
+
+export type GameSetting = {
+    gameTime: number;
+    playerMaxLive: number;
+    canvas: Canvas;
+    blockProbability: number;
+}
+
+export type GameStateDto = {
+    roomId: string;
+    type: "loading" | "running" | "ending";
+    setting: GameSetting;
     timeLeft: number;
     players: PlayerDto[];
     bombs: BombDto[];
     walls: WallDto[];
     effects: EffectDto[];
+    pickedEffectCount: number;
+    bombPlaceCount: number;
+    maxEffects: number;
+    wallBreakableCount: number;
+    wallBreaksCount: number;
 };
 
 export type PlayerDto = {
@@ -58,10 +83,19 @@ export type WallDto = {
     pos: Vector;
     breakable: boolean;
     box: BoundingBox;
+    resistance?: number,
+    damage?: number,
+    eff?: number | undefined
 };
 
 export type EffectDto = {
+    id: number;
     pos: Vector;
-    effect: number;
     box: BoundingBox;
+};
+export function formatMilliseconds(ms: number): string {
+    const totalSeconds = Math.floor(ms / 1000);
+    const minutes = Math.max(0, Math.floor(totalSeconds / 60));
+    const seconds = Math.max(0, totalSeconds % 60);
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 };
