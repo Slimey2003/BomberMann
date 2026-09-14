@@ -1,11 +1,11 @@
-import Controller from "../Controller";
-import type Player from "../moveable/Player";
+import Controller from "./Controller";
+import type Player from "../objects/moveable/Player";
 import type Vector from "@project/utils/Vector";
-import EffectCard from "./EffectCard";
-import type BombController from "../moveable/BombController";
-import type PlayerController from "../moveable/PlayerController";
-import type WallController from "../wall/WallController";
-import BreakableWall from "../wall/BreakableWall";
+import EffectCard from "../objects/effect/EffectCard";
+import type BombController from "./BombController";
+import type PlayerController from "./PlayerController";
+import type WallController from "./WallController";
+import BreakableWall from "../objects/wall/BreakableWall";
 
 export default class EffectController extends Controller {
     private effectsCards: EffectCard[] = [];

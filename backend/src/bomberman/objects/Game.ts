@@ -1,8 +1,8 @@
-import WallController from "./wall/WallController";
-import PlayerController from "./moveable/PlayerController";
-import BombController from "./moveable/BombController";
-import EffectController from "./effect/EffectController";
-import GameTickScheduler from "./GameTickScheduler";
+import WallController from "../controllers/WallController";
+import PlayerController from "../controllers/PlayerController";
+import BombController from "../controllers/BombController";
+import EffectController from "../controllers/EffectController";
+import GameTickScheduler from "../util/GameTickScheduler";
 import type Wall from "./wall/Wall";
 import type Player from "./moveable/Player";
 import type EffectCard from "./effect/EffectCard";
@@ -24,7 +24,7 @@ export default class Game {
     private bombController: BombController;
     private effectController: EffectController;
 
-    constructor(roomId:string, playerNames: string[], setting: GameSetting) {
+    constructor(roomId:string, playerNames: { id: string, name: string }[], setting: GameSetting) {
         this.roomId = roomId;
         this.setting = setting;
         this.gameTickScheduler = new GameTickScheduler(Game.gameTickPerSec);
@@ -36,6 +36,22 @@ export default class Game {
         this.playerController.init(this.wallController, this.playerController, this.bombController, this.effectController);
         this.bombController.init(this.wallController, this.playerController, this.bombController, this.effectController);
         this.effectController.init(this.wallController, this.playerController, this.bombController, this.effectController);
+    }
+
+    static generateBasisGame(): Game {
+        return new Game(crypto.randomUUID(), [{id: "110", name:"Spieler1"}, {id: "111", name:"Spieler2"}], {
+            canvas: {
+                height: 520,
+                width: 520,
+                playerSize: 30,
+                wallSize: 30, 
+                bombSize: 20,
+                effectSize: 27.5
+            },
+            playerMaxLive: 3,
+            blockProbability: 0.5,
+            gameTime: 600_000
+        });
     }
 
     public getWallController() {
@@ -111,8 +127,7 @@ export default class Game {
                     breakable: true,
                     resistance: w.getResistance(),
                     damage: w.getDamage(),
-                    box: w.getBox(), 
-                    eff: w.getEffect()
+                    box: w.getBox()
                 }
             }
             return {

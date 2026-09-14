@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Button, Card, Col, Container, Row } from "react-bootstrap";
 import GameManager from "../backend/GameManager";
 import SettingComponent from "./SettingsComponent";
-import type Game from "../backend/objects/Game";
+import type Game from "../../../../backend/src/bomberman/objects/Game";
 import type { GameStateDto } from "@project/utils";
 import GameComponent from "./GameComponent";
 import EndingOverlay from "./overlay/EndingOverlay";

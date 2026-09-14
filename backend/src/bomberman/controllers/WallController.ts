@@ -1,7 +1,7 @@
 import Direction from "@project/utils/Direction";
 import Vector from "@project/utils/Vector";
-import BreakableWall from "./BreakableWall";
-import Wall from "./Wall";
+import BreakableWall from "../objects/wall/BreakableWall";
+import Wall from "../objects/wall/Wall";
 import BoundingBox from "@project/utils/BoundingBox";
 import type { Canvas } from "@project/utils";
 

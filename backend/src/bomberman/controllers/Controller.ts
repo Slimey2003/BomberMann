@@ -1,8 +1,8 @@
 import type { Canvas } from "@project/utils";
-import type EffectController from "./effect/EffectController";
-import type BombController from "./moveable/BombController";
-import type PlayerController from "./moveable/PlayerController";
-import type WallController from "./wall/WallController";
+import type EffectController from "./EffectController";
+import type BombController from "./BombController";
+import type PlayerController from "./PlayerController";
+import type WallController from "./WallController";
 
 export default class Controller {
     private wallController: WallController | undefined;

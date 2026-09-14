@@ -2,22 +2,29 @@ import Effect from "../effect/Effect";
 import type Vector from "@project/utils/Vector";
 import Moveable from "./Moveable";
 import { EffectType } from "@project/utils";
+import type PlayerInputController from "../../controllers/PlayerInputController";
 
 export default class Player extends Moveable {
-    private id: number;
+    private id: string;
     private name: string;
     private lives: number;
     private effects: Effect[] = [];
+    private inputController: PlayerInputController;
 
-    constructor(id: number, lives: number, name: string, startPosition: Vector, height: number, width: number) {
+    constructor(id: string, lives: number, name: string, startPosition: Vector, height: number, width: number, inputController: PlayerInputController) {
         super(startPosition, height, width); 
         this.id = id;
         this.name = name;
         this.lives = lives;
+        this.inputController = inputController;
     }
 
-    public getId(): number {
+    public getId(): string {
         return this.id;
+    }
+
+    public getInputController() {
+        return this.inputController;
     }
 
     public getName(): string {
@@ -70,6 +77,15 @@ export default class Player extends Moveable {
                 return eff;
             }
         }
+    }
+
+    public getMaxPlacedBomb() {
+        let max = 1;
+        const eff = this.getEffect(EffectType.STACK);
+        if (eff) {
+            max += eff.getScale();
+        }
+        return max;
     }
 
 }
