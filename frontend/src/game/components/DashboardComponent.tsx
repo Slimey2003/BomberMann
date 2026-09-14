@@ -8,11 +8,16 @@ export default function DashboardComponent() {
     const [userId, setUserId] = useState<number | undefined>();
     const [roomId, setRoomId] = useState<string | undefined>();
     
+    if (roomId && userId !== undefined) {
+        return <RoomComponent userId={userId} roomId={roomId} manager={manager} onMenu={() => {
+            setUserId(undefined);
+            setRoomId(undefined);
+        }}/>
+    }
+
     return (
         <>
-            {roomId && userId !== undefined && (
-                <RoomComponent userId={userId} roomId={roomId} manager={manager}/>
-            )}
+            
             <MainMenuComponent 
                 onJoin={(roomId, player) => {
                     const id = manager.addPlayer(roomId, player);

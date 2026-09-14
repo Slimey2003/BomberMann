@@ -5,8 +5,9 @@ import SettingComponent from "./SettingsComponent";
 import type Game from "../backend/objects/Game";
 import type { GameStateDto } from "@project/utils";
 import GameComponent from "./GameComponent";
+import EndingOverlay from "./overlay/EndingOverlay";
 
-export default function RoomComponent({userId, roomId, manager}: {userId: number, roomId: string, manager: GameManager}) {
+export default function RoomComponent({userId, roomId, manager, onMenu}: {userId: number, roomId: string, manager: GameManager, onMenu: () => void}) {
     const [gameState, setGameState] = useState<GameStateDto | null>(null);
     const [game, setGame] = useState<Game | null>(null);
     const [players, setPlayers] = useState<string[]>([""]);
@@ -40,7 +41,21 @@ export default function RoomComponent({userId, roomId, manager}: {userId: number
         return <></>
     }
 
-    if (game && gameState && gameState.type !== "ending") {
+    if (game && gameState) {
+        if (gameState.type === "ending") {
+            return (
+                <EndingOverlay 
+                        gameState={gameState}
+                        onLeave={() => {
+                            setGame(null);
+                            setGameState(null);
+                        }} 
+                        onNewGame={() => {
+                            setGame(manager.startGame(roomId));
+                        }}
+                />
+            );
+        }
         return <GameComponent gameState={gameState} game={game}/>
     }
 
@@ -84,12 +99,19 @@ export default function RoomComponent({userId, roomId, manager}: {userId: number
                                 <SettingComponent manager={manager} id={userId} roomId={roomId} isAdmin={true} ></SettingComponent>
                             </Col>
                         </Row>
-                        <Row className="m-4">
+                        <Row className="m-4 gap-4">
                             <Button variant="outline-secondary" className="w-100 text-info fw-bold rounded-3"
+                                disabled={manager.getSetting(roomId).roomSize>manager.getSetting(roomId).players.length
+                                }
                                 onClick={() => {
                                     setGame(manager.startGame(roomId));
                                 }}
                             >Game Starten</Button>
+                            <Button variant="outline-danger" className="w-100 text-white fw-bold rounded-3"
+                                disabled={manager.getSetting(roomId).roomSize>manager.getSetting(roomId).players.length
+                                }
+                                onClick={onMenu}
+                            >Zurück zum Menu</Button>
                         </Row>
                     </Card.Body>
                 </Card>

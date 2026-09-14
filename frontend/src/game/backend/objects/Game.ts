@@ -86,8 +86,10 @@ export default class Game {
     };
 
     public gameOver() {
-        if ((this.gameTickScheduler.getStartTime() + this.setting.gameTime) - this.gameTickScheduler.getLastTime() <= 0
-            || this.playerController.getPlayers().every(p => p.isDead())) {
+        if (
+            (this.gameTickScheduler.getStartTime() + this.setting.gameTime) - this.gameTickScheduler.getLastTime() <= 0
+            || this.playerController.isLastPlayerStanding()
+        ) {
             this.gameStop();
             this.gameState = "ending";
             return true;
@@ -170,6 +172,8 @@ export default class Game {
             pickedEffectCount: this.getEffectController().getPickedEffectCount(),
             bombPlaceCount: this.getBombController().getPlaceCount(),
             maxEffects: this.getEffectController().getMaxEffectsCards(),
+            wallBreakableCount: this.getWallController().getBreakableWallCount(),
+            wallBreaksCount: this.getWallController().getWallBreaksCount()
         }
     }
     

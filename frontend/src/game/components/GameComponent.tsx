@@ -1,16 +1,11 @@
 import Game from "../backend/objects/Game";
-import type { GameStateDto } from "@project/utils";
+import { formatMilliseconds, type GameStateDto } from "@project/utils";
 import Canvas from "./CanvasComponent";
-import { Card, Col, Container, ListGroup, ProgressBar, Row, Badge, Spinner } from "react-bootstrap";
+import { Card, Col, Container, ListGroup, ProgressBar, Row, Badge } from "react-bootstrap";
 import { useEffect, useMemo } from "react";
 import StartingOverlay from "./overlay/StartingOverlay";
 
-const formatMilliseconds = (ms: number): string => {
-    const totalSeconds = Math.floor(ms / 1000);
-    const minutes = Math.max(0, Math.floor(totalSeconds / 60));
-    const seconds = Math.max(0, totalSeconds % 60);
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-};
+
 
 export default function GameComponent({gameState, game}: {gameState: GameStateDto, game: Game}) {
 

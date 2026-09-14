@@ -59,6 +59,8 @@ export type GameStateDto = {
     pickedEffectCount: number;
     bombPlaceCount: number;
     maxEffects: number;
+    wallBreakableCount: number;
+    wallBreaksCount: number;
 };
 
 export type PlayerDto = {
@@ -90,4 +92,10 @@ export type EffectDto = {
     id: number;
     pos: Vector;
     box: BoundingBox;
+};
+export function formatMilliseconds(ms: number): string {
+    const totalSeconds = Math.floor(ms / 1000);
+    const minutes = Math.max(0, Math.floor(totalSeconds / 60));
+    const seconds = Math.max(0, totalSeconds % 60);
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 };
