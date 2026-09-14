@@ -38,6 +38,7 @@ export default class WallController {
 
         for (const wall of this.walls.values()) {
             const hitTime = wall.getBox().intersects(start, end);
+            const hitTime = wall.getBox().intersects(start, end);
             
             if (hitTime !== null && hitTime < minHitTime) {
                 minHitTime = hitTime;
