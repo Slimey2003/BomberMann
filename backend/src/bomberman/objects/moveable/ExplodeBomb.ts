@@ -3,7 +3,7 @@ import type Vector from "@project/utils/Vector";
 import type Bomb from "./Bombs";
 
 export default class ExplodeBomb implements Delayed {
-    private static EXPOSITION_TIME: number = 2000; //sec
+    private static EXPOSITION_TIME: number = 1000; //sec
     
     private bomb: Bomb;
     private explodeTime: number;

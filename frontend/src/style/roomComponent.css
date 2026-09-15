@@ -1,0 +1,16 @@
+.setting-card {
+    max-Width: 600px;
+}
+.responsive-border {
+    border-bottom: 1px solid var(--bs-secondary);
+}
+@media (min-width: 768px) {
+    .responsive-border {
+        border-bottom: none !important;
+        border-right: 1px solid var(--bs-secondary) !important;
+    }
+        
+    .setting-card {
+        min-Width: 700px;
+    }
+}

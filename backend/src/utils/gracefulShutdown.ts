@@ -30,9 +30,7 @@ const cleanup = async (server: Server, additionalCleanup: () => void) => {
     }
  */
 
-    // Zusätzliche Cleanups ausführen (wenn provided)
     if (additionalCleanup) {
-        // Annahme: additionalCleanup gibt ein Promise zurück oder ist synchron
         cleanupPromises.push(Promise.resolve(additionalCleanup()));
     }
 

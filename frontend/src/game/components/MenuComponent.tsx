@@ -1,19 +1,59 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, Card, Container, Form, Tab, Tabs } from "react-bootstrap";
 import { SettingSlider } from "./SettingsComponent";
+import socket from "../../socket";
+import { useNavigate } from "react-router-dom";
 
-export default function MainMenuComponent({ 
-    onJoin, 
-    onCreate 
+export default function MainMenuComponent({
+    setToastMessage
 }: { 
-    onJoin: (roomId: string, playerName: string) => void;
-    onCreate: (playerSize: number, playerName: string) => void;
+    setToastMessage: (toast: { type: string; text: string; }) => void;
 }) {
+    const navigate = useNavigate();
+    
     const [joinRoomId, setJoinRoomId] = useState("");
     const [joinPlayerName, setJoinPlayerName] = useState("");
-
-    const [createPlayerName, setCreatePlayerName] = useState("");
     const [playerSize, setPlayerSize] = useState(1);
+
+    useEffect(() => {
+        if (!socket.connected) {
+            socket.connect();
+        }
+    }, []);
+
+    function handleCreateRoom() {
+        if (!joinPlayerName.match(/^[a-zA-Z0-9_]{3,10}$/)) {
+            setToastMessage({ type: 'error', text: 'Spielername ungültig! (3-10 Zeichen, A-Z, 0-9, _)' });
+            return;
+        }
+        
+        socket.emit('create_room', joinPlayerName, playerSize, (roomId: string) => {
+            if (roomId) {
+                navigate(`/match/${roomId}`);
+            }
+        });
+    }
+
+    function handleJoinRoom() {
+        if (!joinRoomId || !joinPlayerName) {
+            setToastMessage({ type: 'warning', text: 'Bitte gib Raum-ID und Spielernamen ein!' });
+            return;
+        }
+        if (!joinRoomId.match(/^[a-z0-9_]{7,7}$/)) {
+            setToastMessage({ type: 'error', text: 'Raum ID ungültig! (7 Zeichen, a-z, 0-9, _)' });
+            return;
+        }
+        if (!joinPlayerName.match(/^[a-zA-Z0-9_]{3,10}$/)) {
+            setToastMessage({ type: 'error', text: 'Spielername ungültig! (3-10 Zeichen, A-Z, 0-9, _)' });
+            return;
+        }
+        
+        socket.emit('join_room', joinRoomId, joinPlayerName, (success: boolean) => {
+            if (success) {
+                navigate(`/match/${joinRoomId}`);
+            }
+        });
+    }
 
     return (
         <Container fluid className="py-4 min-vh-100 d-flex flex-column align-items-center justify-content-center" style={{ backgroundColor: "#1e1e2f" }}>
@@ -26,7 +66,7 @@ export default function MainMenuComponent({
                             <Form 
                                 onSubmit={(e) => {
                                     e.preventDefault();
-                                    if (createPlayerName) onCreate(playerSize, createPlayerName);
+                                    handleCreateRoom();
                                 }} 
                                 className="d-flex flex-column gap-3 mt-3"
                             >
@@ -47,8 +87,8 @@ export default function MainMenuComponent({
                                     <Form.Control
                                         type="text"
                                         placeholder="Spieler 1"
-                                        value={createPlayerName}
-                                        onChange={(e) => setCreatePlayerName(e.target.value)}
+                                        value={joinPlayerName}
+                                        onChange={(e) => setJoinPlayerName(e.target.value)}
                                         className="bg-secondary text-light border-0 rounded-3 p-2"
                                         required
                                     />
@@ -63,7 +103,7 @@ export default function MainMenuComponent({
                             <Form 
                                 onSubmit={(e) => {
                                     e.preventDefault();
-                                    if (joinRoomId && joinPlayerName) onJoin(joinRoomId, joinPlayerName);
+                                    handleJoinRoom();
                                 }} 
                                 className="d-flex flex-column gap-3 mt-3"
                             >
@@ -71,7 +111,7 @@ export default function MainMenuComponent({
                                     <Form.Label className="text-info fw-bold">Raum ID</Form.Label>
                                     <Form.Control
                                         type="text"
-                                        placeholder="12345-ABC"
+                                        placeholder="12345"
                                         value={joinRoomId}
                                         onChange={(e) => setJoinRoomId(e.target.value)}
                                         className="bg-secondary text-light border-0 rounded-3 p-2"
@@ -96,8 +136,6 @@ export default function MainMenuComponent({
                                 </Button>
                             </Form>
                         </Tab>
-                        
-                        
                     </Tabs>
                 </Card.Body>
             </Card>

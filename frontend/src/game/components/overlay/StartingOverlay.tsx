@@ -1,6 +1,6 @@
 import { Spinner } from "react-bootstrap";
 
-export default function StartingOverlay() {
+export default function WaitingOverlay({waitingName}: {waitingName: string}) {
     return (
         <div
             style={{
@@ -18,7 +18,7 @@ export default function StartingOverlay() {
             }}
         >
             <Spinner animation="border" variant="primary" style={{ width: "5rem", height: "5rem", borderWidth: "0.3rem" }} />
-            <h2 className="text-light mt-4 fw-bold">Warte auf Spielstart...</h2>
+            <h2 className="text-light mt-4 fw-bold">Warte auf {waitingName}...</h2>
         </div>
     )
 }

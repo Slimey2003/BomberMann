@@ -1,6 +1,7 @@
+import type { RoomSetting } from "@project/utils";
 import { useState } from "react";
 import { Button, Form } from "react-bootstrap";
-import type GameManager from "../backend/GameManager";
+import socket from "../../socket";
 
 export function SettingSlider({ label, min, max, value, onChange, labels }: { label: string, min: number, max: number, value: number, onChange: (val: number) => void, labels: string[] }) {
     return (
@@ -27,7 +28,7 @@ export function SettingSlider({ label, min, max, value, onChange, labels }: { la
     );
 }
 
-export default function SettingComponent({roomId, id, manager, isAdmin}: {roomId: string, id: number, manager: GameManager, isAdmin: boolean}) {
+export default function SettingComponent({isAdmin, setSetting}: {isAdmin: boolean, setSetting: (settings: RoomSetting) => void}) {
     const [playerName, setPlayerName] = useState("");
     const [difficulty, setDifficulty] = useState(2);
     const [isLargeField, setIsLargeField] = useState(0);
@@ -50,8 +51,7 @@ export default function SettingComponent({roomId, id, manager, isAdmin}: {roomId
                     size="sm"
                     className="w-100 text-dark fw-bold rounded-3"
                     onClick={() => {
-                        if (playerName.length === 0) return;
-                        manager.updatePlayerName(roomId, id, playerName);
+
                     } }
                 >
                     Spieler Name ändern
@@ -66,8 +66,10 @@ export default function SettingComponent({roomId, id, manager, isAdmin}: {roomId
                         max={3}
                         value={difficulty}
                         onChange={(val) => {
-                            setDifficulty(val);
-                            manager.updateDifficulty(roomId, val);
+                            socket.emit("update_difficulty", val, (setting: RoomSetting) => {
+                                setSetting(setting);
+                                setGameTime(val);
+                            })
                         }}
                         labels={["Leicht", "Normal", "Schwer"]}
                     />
@@ -78,18 +80,22 @@ export default function SettingComponent({roomId, id, manager, isAdmin}: {roomId
                         max={2}
                         value={gameTime}
                         onChange={(val) => {
-                            setGameTime(val);
+                            let time = 0;
                             switch (val) {
                                 case 0:
-                                    manager.updateGameTime(roomId, 300_000);
+                                    time = 300_000
                                     break;
                                 case 1:
-                                    manager.updateGameTime(roomId, 600_000);
+                                    time = 600_000
                                     break;
                                 case 2:
-                                    manager.updateGameTime(roomId, 900_000);
+                                    time = 900_000
                                     break;
                             }
+                            socket.emit("update_game_time", time, (setting: RoomSetting) => {
+                                setSetting(setting);
+                                setGameTime(val);
+                            })
                         }}
                         labels={["5Min", "10Min", "15Min"]}
                     />
@@ -101,7 +107,10 @@ export default function SettingComponent({roomId, id, manager, isAdmin}: {roomId
                         value={isLargeField}
                         onChange={(val) => {
                             setIsLargeField(val);
-                            manager.updateCanvasSize(roomId, val);
+                            socket.emit("update_field_size", val, (setting: RoomSetting) => {
+                                setSetting(setting);
+                                setIsLargeField(val);
+                            })
                         }}
                         labels={["Klein", "Groß", "Exp."]}
                     />
