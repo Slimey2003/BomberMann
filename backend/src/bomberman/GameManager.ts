@@ -1,6 +1,6 @@
 import type { Canvas, GameSetting, RoomSetting } from "@project/utils";
 import Game from "../bomberman/objects/Game";
-import type { Room } from "../utils/Util";
+import type { Room } from "../utils/util";
 
 export default class GameManager {
     private rooms: { [key: string]: Room } = {};
@@ -20,6 +20,7 @@ export default class GameManager {
         
         const room: Room = {
             id: roomID,
+            ownerId: hostId,
             players: {},
             setting: roomSetting,
         };
@@ -30,28 +31,35 @@ export default class GameManager {
         return room;
     }
 
+    public deleteRoom(roomId: string) {
+        delete this.rooms[roomId];
+    }
+
     public updatePlayerName(roomId: string, playerId: string, name: string): void {
         const room: Room | undefined = this.getRoom(roomId);
         if (!room) return;
         room.players[playerId] = name;
     }
 
-    public updateDifficulty(roomId: string, diff: number): void {
+    public updateDifficulty(roomId: string, diff: number): Room | undefined {
         const room: Room | undefined = this.getRoom(roomId);
-        if (!room) return;
+        if (!room) return undefined;
         room.setting.difficulty = diff;
+        return room;
     }
 
-    public updateCanvasSize(roomId: string, size: number): void {
+    public updateCanvasSize(roomId: string, size: number): Room | undefined {
         const room: Room | undefined = this.getRoom(roomId);
-        if (!room) return;
+        if (!room) return undefined;
         room.setting.canvasSize = size;
+        return room;
     }
     
-    public updateGameTime(roomId: string, time: number): void {
+    public updateGameTime(roomId: string, time: number): Room | undefined {
         const room: Room | undefined = this.getRoom(roomId);
-        if (!room) return;
+        if (!room) return undefined;
         room.setting.gameTime = time;
+        return room;
     }
 
     public getSetting(roomId: string): RoomSetting | undefined {
@@ -67,10 +75,11 @@ export default class GameManager {
         return room.players;
     }
 
-    public removePlayer(roomId: string, playerId: string): void {
+    public removePlayer(roomId: string, playerId: string): { [key: string]: string } {
         const room = this.getRoom(roomId);
-        if (!room) return;
+        if (!room) return {};
         delete room.players[playerId];
+        return room.players;
     }
 
     public createGame(room: Room): Game {

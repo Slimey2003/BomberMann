@@ -35,8 +35,6 @@ describe("Game", () => {
             throw Error("Game has no Instance");
         }
         game.gameStop();
-
-        // Falls BombController / EffectController eigene Timer besitzen:
         game.getBombController().clearPlacedBombs();
         game.getBombController().clearExplodeBombs();
 

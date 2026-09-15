@@ -60,6 +60,11 @@ export const CanvasSchema = z.object({
 });
 export type Canvas = z.infer<typeof CanvasSchema>;
 
+export const RoomSchema = z.object({
+    id: z.number(),
+    players: z.object()
+});
+
 export const RoomSettingSchema = z.object({
     gameTime: z.number(),
     difficulty: z.number(),

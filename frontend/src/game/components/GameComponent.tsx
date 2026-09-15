@@ -1,29 +1,29 @@
-import Game from "../../../../backend/src/bomberman/objects/Game";
 import { formatMilliseconds, type GameStateDto } from "@project/utils";
 import Canvas from "./CanvasComponent";
 import { Card, Col, Container, ListGroup, ProgressBar, Row, Badge } from "react-bootstrap";
 import { useEffect, useMemo } from "react";
-import StartingOverlay from "./overlay/StartingOverlay";
+import WaitingOverlay from "./overlay/StartingOverlay";
+import socket from "../../socket";
 
 
 
-export default function GameComponent({gameState, game}: {gameState: GameStateDto, game: Game}) {
+export default function GameComponent({gameState}: {gameState: GameStateDto}) {
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (!e.key) return;
             e.preventDefault();
-            game.getPlayerController().addInputPlayerKey(0, e.key);
+            socket.emit("player_input_action", e.key);
         };
 
         const handleKeyUp = (e: KeyboardEvent) => {
             if (!e.key) return;
-            game.getPlayerController().releaseInputPlayerKey(0, e.key);
+            socket.emit("player_release_action", e.key);
         };
 
         const handleClick = () => {
-            game.getPlayerController().clearPlayerKeys(0);
-        };  
+            socket.emit("player_clear_action");
+        };
         window.addEventListener("click", handleClick);
         window.addEventListener("keydown", handleKeyDown);
         window.addEventListener("keyup", handleKeyUp);
@@ -32,7 +32,7 @@ export default function GameComponent({gameState, game}: {gameState: GameStateDt
             window.removeEventListener("keydown", handleKeyDown);
             window.removeEventListener("keyup", handleKeyUp);
         };
-    }, [game]);
+    }, [socket]);
 
 
     const formattedGameTime = gameState?.setting.gameTime ? formatMilliseconds(gameState.setting.gameTime) : "0:00";
@@ -59,7 +59,7 @@ export default function GameComponent({gameState, game}: {gameState: GameStateDt
             <Container fluid className="py-4 min-vh-100 d-flex align-items-center" style={{ backgroundColor: "#1e1e2f" }}>
 
                 {gameState.type === "loading" &&
-                    (<StartingOverlay/>)
+                    (<WaitingOverlay waitingName="Spiel start"/>)
                 }
                 <Row className="w-100 justify-content-center align-items-center">
                     <Col xs={12} xl={3} className="d-flex justify-content-center justify-content-xl-end mb-4 mb-xl-0">
