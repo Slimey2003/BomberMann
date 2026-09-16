@@ -1,5 +1,5 @@
 .setting-card {
-    max-Width: 600px;
+    min-Width: 300px !important;
 }
 .responsive-border {
     border-bottom: 1px solid var(--bs-secondary);
@@ -11,6 +11,11 @@
     }
         
     .setting-card {
-        min-Width: 700px;
+        min-Width: 750px !important;
+    }
+}
+@media (min-width: 1024px) {
+    .setting-card {
+        min-Width: 1000px !important;
     }
 }

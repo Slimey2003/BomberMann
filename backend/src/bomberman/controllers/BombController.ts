@@ -23,7 +23,7 @@ export default class BombController extends Controller {
 
     public placeBomb(playerId: string) {
         const player = super.getPlayerController().getPlayer(playerId);
-        if (!player) return;
+        if (!player || player.isDead()) return;
 
         const playerPos = player.getPosition();
         const newBomb = new Bomb(player.getId(), this.modifyPosition(playerPos), this.canvas.bombSize, this.canvas.bombSize);
@@ -143,6 +143,7 @@ export default class BombController extends Controller {
     
     public playerCollidedWithBomb() {
         for (const player of super.getPlayerController().getPlayers()) {
+            if (player.isDead()) continue;
             for (const bomb of this.getPlacedBombs()) {
                 if (player.getBox().overlaps(bomb.getBox())) {
                     const playerMovement = player.getMovement()
@@ -150,8 +151,7 @@ export default class BombController extends Controller {
                     if (bomb.noCollision() 
                         || playerMovement.equals(Vector.nullVector)
                         || !bombMovement.equals(Vector.nullVector)) continue;
-                    console.log(playerMovement.scale(2));
-                    bomb.setVelocity(playerMovement.scale(2));
+                    bomb.setVelocity(playerMovement.scale(3));
                     break;
                 }
             }

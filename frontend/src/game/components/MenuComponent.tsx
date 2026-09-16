@@ -13,7 +13,7 @@ export default function MainMenuComponent({
     
     const [joinRoomId, setJoinRoomId] = useState("");
     const [joinPlayerName, setJoinPlayerName] = useState("");
-    const [playerSize, setPlayerSize] = useState(1);
+    const [playerSize, setPlayerSize] = useState(2);
 
     useEffect(() => {
         if (!socket.connected) {
@@ -48,7 +48,8 @@ export default function MainMenuComponent({
             return;
         }
         
-        socket.emit('join_room', joinRoomId, joinPlayerName, (success: boolean) => {
+        socket.emit('join_room', joinRoomId, joinPlayerName, (success: boolean, msg?: string) => {
+            if (msg) setToastMessage({type: "warning", text: msg})
             if (success) {
                 navigate(`/match/${joinRoomId}`);
             }
@@ -73,13 +74,13 @@ export default function MainMenuComponent({
                                 <Form.Group>
                                     <SettingSlider
                                         label="Spieler Anzahl"
-                                        min={1}
+                                        min={2}
                                         max={4}
                                         value={playerSize}
                                         onChange={(val) => {
                                             setPlayerSize(val);
                                         }}
-                                        labels={["Test", "2", "3", "4"]}
+                                        labels={["2", "3", "4"]}
                                     />
                                 </Form.Group>
                                 <Form.Group>
@@ -94,7 +95,7 @@ export default function MainMenuComponent({
                                     />
                                 </Form.Group>
 
-                                <Button type="submit" variant="primary" className="w-100 text-dark fw-bold rounded-3 mt-2 py-2">
+                                <Button type="submit" variant="success" className="w-100 text-dark fw-bold rounded-3 mt-2 py-2">
                                     Raum Starten
                                 </Button>
                             </Form>

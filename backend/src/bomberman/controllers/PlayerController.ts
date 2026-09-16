@@ -30,9 +30,12 @@ export default class PlayerController extends Controller {
 
     public isLastPlayerStanding(): boolean {
         const playerArray: Player[] = Object.values(this.players);
-        if (playerArray.length === 1) {
-            return playerArray[0].isDead();
-        }
+        /** Remove - No Testing 
+            if (playerArray.length === 1) {
+                return playerArray[0].isDead();
+            }
+         */
+        
         const lifePlayers: Player[] = playerArray.filter(p => !p.isDead());
         return lifePlayers.length <= 1;
     }
@@ -68,6 +71,10 @@ export default class PlayerController extends Controller {
             }
             this.players[playerId] = new Player(playerId, lives, playerData[i].name, pos[i], canvas.playerSize, canvas.playerSize, controller);
         }
+    }
+
+    public removePlayer(id: string) {
+        delete this.players[id];
     }
 
     public addInputPlayerKey(playerId: string, keycode: string): void {
@@ -107,8 +114,8 @@ export default class PlayerController extends Controller {
             
             const expandedBox: BoundingBox = new BoundingBox(
                 new Vector(playerBox.centerX(), playerBox.centerY()),
-                playerBox.getHeight() + this.canvas.bombSize,
-                playerBox.getWidth() + this.canvas.bombSize
+                playerBox.getHeight() + this.canvas.bombSize * 0.6,
+                playerBox.getWidth() + this.canvas.bombSize * 0.6
             );
 
             for (const vec of bombRange) {

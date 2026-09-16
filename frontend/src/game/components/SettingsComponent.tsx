@@ -28,7 +28,7 @@ export function SettingSlider({ label, min, max, value, onChange, labels }: { la
     );
 }
 
-export default function SettingComponent({isAdmin, setSetting}: {isAdmin: boolean, setSetting: (settings: RoomSetting) => void}) {
+export default function SettingComponent({isAdmin, setSetting, setToastMessage}: {isAdmin: boolean, setSetting: (settings: RoomSetting) => void,  setToastMessage: (toast: { type: string; text: string; }) => void}) {
     const [playerName, setPlayerName] = useState("");
     const [difficulty, setDifficulty] = useState(2);
     const [isLargeField, setIsLargeField] = useState(0);
@@ -38,28 +38,34 @@ export default function SettingComponent({isAdmin, setSetting}: {isAdmin: boolea
         <>        
             <h4 className="text-primary mb-2">Settings</h4>
             <div>
-                <Form.Control
-                    size="sm"
-                    type="text"
-                    placeholder="Spieler Name"
-                    value={playerName}
-                    onChange={(e) => setPlayerName(e.target.value)}
-                    className="bg-secondary text-light border-0 mb-1 rounded-3"
-                />
-                <Button 
-                    variant="primary" 
-                    size="sm"
-                    className="w-100 text-dark fw-bold rounded-3"
-                    onClick={() => {
-
-                    } }
+                <Form
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        socket.emit("update_player_name", playerName, (msg?: string) => {
+                            if (msg) setToastMessage({text: msg, type: "warning"})
+                        });
+                        setPlayerName("");
+                    }} 
+                    className="d-flex flex-column gap-3 mt-3"
                 >
-                    Spieler Name ändern
-                </Button>
+                    <Form.Control
+                        size="sm"
+                        type="text"
+                        placeholder="Spieler Name"
+                        value={playerName}
+                        onChange={(e) => setPlayerName(e.target.value)}
+                        className="bg-secondary text-light border-0 mb-1 rounded-3"
+                    />
+
+                    <Button type="submit" variant="primary" className="w-100 text-light fw-bold rounded-3 mt-2 py-2">
+                        SpielerName ändern
+                    </Button>
+                </Form>
             </div>
             
             {isAdmin && (
                 <>
+                    <hr/>
                     <SettingSlider
                         label="Schwierigkeitsgrad"
                         min={1}
@@ -68,7 +74,7 @@ export default function SettingComponent({isAdmin, setSetting}: {isAdmin: boolea
                         onChange={(val) => {
                             socket.emit("update_difficulty", val, (setting: RoomSetting) => {
                                 setSetting(setting);
-                                setGameTime(val);
+                                setDifficulty(val);
                             })
                         }}
                         labels={["Leicht", "Normal", "Schwer"]}

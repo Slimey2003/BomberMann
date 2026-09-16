@@ -60,7 +60,7 @@ export default function EndingOverlay({ isAdmin, gameState, onLeave, onNewGame }
                         <Button variant="outline-light" className="w-100 rounded-3 py-2 fw-bold" onClick={onLeave}>
                             Zurück zur Lobby
                         </Button>
-                        {isAdmin && (
+                        {isAdmin && gameState.players.length >= 2 && (
                             <Button variant="outline-light" className="w-100 rounded-3 py-2 fw-bold" onClick={onNewGame}>
                                 Neues Game
                             </Button>

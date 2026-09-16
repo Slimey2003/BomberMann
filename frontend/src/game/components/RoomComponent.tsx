@@ -3,11 +3,12 @@ import { Button, Card, Col, Container, Form, Row } from "react-bootstrap";
 import SettingComponent from "./SettingsComponent";
 import GameComponent from "./GameComponent";
 import EndingOverlay from "./overlay/EndingOverlay";
-import { Navigate, useNavigate, useParams } from "react-router-dom";
-import { type RoomSetting, type GameStateDto } from "@project/utils";
+import { useNavigate, useParams } from "react-router-dom";
+import { type RoomSetting, type GameStateDto, GameStateDtoSchema } from "@project/utils";
 import socket from "../../socket";
 import '../../style/roomComponent.css'
 import WaitingOverlay from "./overlay/StartingOverlay";
+import ImageController from "../util/ImageController";
 
 export default function RoomComponent({setToastMessage}: { 
     setToastMessage: (toast: { type: string; text: string; }) => void;
@@ -21,22 +22,51 @@ export default function RoomComponent({setToastMessage}: {
     const [roomSetting, setRoomSetting] = useState<RoomSetting | null>(null);
     const [players, setPlayers] = useState<string[]>([""]);
     const [joinPlayerName, setJoinPlayerName] = useState('');
+    const [lobby, setLobby] = useState<boolean>(true);
 
-    
     const [isJoining, setJoining] = useState(false);
+
+    useEffect(() => {
+        const handleKeyUp = (e: KeyboardEvent) => {
+            if (!e.key) return;
+            if (e.key === "Escape") {
+                socket.emit("leave_room");
+                navigate("/");
+            }
+        };
+
+        window.addEventListener("keyup", handleKeyUp);
+        
+        return () => {
+            window.removeEventListener("keyup", handleKeyUp);
+        };
+    }, []);
 
     useEffect(() => {
         if (!socket.connected) {
             setJoining(true);
             socket.connect();
-            socket.emit("state_room", (state: boolean) => {
-                console.log(state);
+            socket.emit("state_room", roomID, (state: boolean) => {
                 if (!state) {
                     navigate("/");
-                    setToastMessage({text: "Der Raum existiert nicht mehr!", type: "error"})
+                    setToastMessage({text: "Der Raum existiert nicht mehr!", type: "error"});
+                } else {
+                    socket.emit("reconnect_room", roomID, (success: boolean, players: string[], isAdmin: boolean, settings?: RoomSetting) => {
+                        if (success) {
+                            setJoining(false);
+                            setPlayers(players);
 
+                            setIsAdmin(isAdmin);
+                            if (settings == undefined) {
+                                setRoomSetting(null);
+                                return;
+                            }
+                            setRoomSetting(settings);
+                        }
+                    });
                 }
-            })
+            });
+            
         } else {
             socket.emit('is_admin', (isAdmin: boolean, settings?: RoomSetting) => {
                 setIsAdmin(isAdmin);
@@ -48,34 +78,28 @@ export default function RoomComponent({setToastMessage}: {
             });
             socket.emit("request_players", (players: string[]) => {
                 setPlayers(players);
-            })
+            });
         }
 
-        /**
-         * Backend Game Tick
-         */
-        function gameTick(data: {state: GameStateDto}) {
-            setGameState(data.state);
+        function gameTick(state: GameStateDto) {
+            const parsedState = GameStateDtoSchema.parse(state);
+            setGameState(parsedState);
+            if (parsedState.type === "running") {
+                setLobby(false);
+            }
         }
 
-        /**
-         * Navigiert einen zum Main Menu
-         */
         function roomClosed() {
+            setToastMessage({ type: 'error', text: "Der Raum wurde geschlossen" });
             navigate("/");
-        };
+        }
 
-        /**
-         * Kommt vom Backend wenn was fehlgeschlagen ist. 
-         * Lösst ein ToastMessage aus oder Navigiert einen zum Main Menu
-         */
-        function error(data: {msg: string, roomID?: string, isJoining?: boolean}) {
-            setToastMessage({ type: 'error', text: data.msg });
-            if (data?.roomID !== roomID && !data?.isJoining) {
+        function error(msg: string, roomID?: string, isJoining?: boolean) {
+            if (msg) setToastMessage({ type: 'error', text: msg });
+            if (roomID !== roomID && !isJoining) {
                 navigate("/");
             }
-        };
-
+        }
 
         socket.on("game_tick", gameTick);
         socket.on("room_players", setPlayers);
@@ -88,7 +112,35 @@ export default function RoomComponent({setToastMessage}: {
             socket.off('closed_room', roomClosed);
             socket.off("error", error);
         };
-    }, [roomID]);
+    }, [roomID, navigate, setToastMessage]);
+
+    useEffect(() => {
+        const loadImages = async () => {
+            const requiredImages = [
+                "background", 
+                "tombstone", 
+                "bomb/bomb",
+                "effect/effect_0",
+                "effect/effect_1",
+                "effect/effect_2",
+                "effect/effect_3",
+                "explosion/explosion_center", 
+                "explosion/explosion_up_down", 
+                "explosion/explosion_right_left",
+                "player/player_0",
+                "player/player_1",
+                "player/player_2",
+                "player/player_3",
+                "wall/breakableWall_0",
+                "wall/breakableWall_2",
+                "wall/breakableWall_3",
+                "wall/solidWall"
+            ];
+            
+            await ImageController.preloadImages(requiredImages);
+        }
+        loadImages();
+    }, []);
 
     function handleJoinRoom() {
         if (!roomID || !joinPlayerName) {
@@ -103,31 +155,29 @@ export default function RoomComponent({setToastMessage}: {
             setToastMessage({ type: 'error', text: 'Spielername ungültig! (3-10 Zeichen, A-Z, 0-9, _)' });
             return;
         }
-        socket.emit('join_room', roomID, joinPlayerName, (success: boolean, isAdmin: boolean, setting: RoomSetting) => {
+        socket.emit('join_room', roomID, joinPlayerName, (success: boolean, msg?: string) => {
+                if (msg) setToastMessage({type: "warning", text: msg})
                 if (!success) {
                     navigate("/");
-                    setToastMessage({text: "Der Raum existiert nicht mehr!", type: "error"})
                     return;
                 }
-                setIsAdmin(isAdmin);
-                if (isAdmin) {
-
-                }
                 setJoining(false);
-                
             } 
         );
-    };
+    }
 
-    if (gameState) {
+    if (gameState && !lobby) {
         if (gameState.type === "ending") {
             return (
                 <EndingOverlay 
                         isAdmin={isAdmin}
                         gameState={gameState}
                         onLeave={() => {
+                            setLobby(true);
                             setGameState(null);
-                            socket.emit("leave_room");
+                            if (isAdmin) {
+                                socket.emit("delete_game");
+                            }
                         }}
                         onNewGame={() => {
                             if (isAdmin) {
@@ -191,8 +241,18 @@ export default function RoomComponent({setToastMessage}: {
         <>
             <Container fluid className="py-4 min-vh-100 d-flex flex-column align-items-center justify-content-center" style={{ backgroundColor: "#1e1e2f" }}>
                 <Card className="setting-card bg-dark text-light shadow-lg rounded-4 p-3" style={{ border: '1px solid #333' }}>
-                    <Card.Header> 
-                        <h1 className="text-primary">Room</h1>
+                    <Card.Header className="d-flex flex-column align-items-center justify-content-center"> 
+                        <h1 className="text-primary">Room: </h1>
+                        <h3 className="text-info "
+                            style={{
+                                cursor: "pointer",
+                                width: "140px"
+                            }}
+                            onClick={() => {
+                                navigator.clipboard.writeText(location.href);
+                            }}
+                        
+                        >{roomID}</h3>
                     </Card.Header>
                     <Card.Body className="p-0">
                         <Row className="m-0 h-100">
@@ -204,14 +264,13 @@ export default function RoomComponent({setToastMessage}: {
                             </Col>
                             
                             <Col md={7} className="p-3 d-flex flex-column gap-1 justify-content-center">
-                                <SettingComponent setSetting={setRoomSetting} isAdmin={isAdmin} ></SettingComponent>
+                                <SettingComponent setSetting={setRoomSetting} isAdmin={isAdmin} setToastMessage={setToastMessage}></SettingComponent>
                             </Col>
                         </Row>
                         {isAdmin && roomSetting && (
                             <Row className="m-4 gap-4">
                                 <Button variant="outline-secondary" className="w-100 text-info fw-bold rounded-3"
-                                    disabled={roomSetting.roomSize>players.length
-                                    }
+                                    disabled={players.length<2}
                                     onClick={() => {
                                         socket.emit("start_game");
                                     }}
@@ -219,7 +278,7 @@ export default function RoomComponent({setToastMessage}: {
                                 <Button variant="outline-danger" className="w-100 text-white fw-bold rounded-3"
                                     onClick={() => {
                                         socket.emit("leave_room");
-                                        Navigate({to: "/match"});
+                                        navigate("/");
                                     }}
                                 >Zurück zum Menu</Button>
                             </Row>

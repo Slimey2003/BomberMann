@@ -26,6 +26,7 @@ export default class EffectController extends Controller {
     }
 
     public pickUp(player: Player) {
+        if (player.isDead()) return;
         this.effectsCards = this.effectsCards.filter(c => {
             if (player.getBox().overlaps(c.getBox())) {
                 player.addEffectOrChange(c.getEffectId());

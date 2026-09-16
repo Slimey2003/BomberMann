@@ -78,7 +78,18 @@ export default class GameManager {
     public removePlayer(roomId: string, playerId: string): { [key: string]: string } {
         const room = this.getRoom(roomId);
         if (!room) return {};
+        if (room.ownerId === playerId) {
+            delete this.rooms[roomId];
+            return {}
+        }
         delete room.players[playerId];
+        
+        const game: Game | undefined = room.activeGame;
+        if (game) {
+            game.getPlayerController().removePlayer(playerId);
+            
+        }
+        
         return room.players;
     }
 
@@ -98,7 +109,13 @@ export default class GameManager {
         this.rooms[roomId].activeGame = game;
         setTimeout(() => game.gameStart(), 1000);
         return game;
-    } 
+    }
+
+    public deleteGame(roomId: string): void {
+        const room: Room | undefined = this.getRoom(roomId);
+        if (!room) return;
+        this.rooms[roomId].activeGame = undefined;
+    }
 
     private generateGameSetting(roomSettings: RoomSetting): GameSetting {
         switch (roomSettings.difficulty) {

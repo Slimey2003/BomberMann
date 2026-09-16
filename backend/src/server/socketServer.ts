@@ -3,26 +3,31 @@ import type { GameStateDto, RoomSetting } from "@project/utils";
 import GameManager from "../bomberman/GameManager";
 import http from "http";
 import type { Room } from "../utils/util";
-import { ro } from "zod/locales";
 
 interface ClientToServerEvents {
-    state_room: (callback: (state: boolean) => void) => void;
-
+    state_room: (roomId: string, callback: (state: boolean) => void) => void;
     is_admin: (callback: (isAdmin: boolean, settings?: RoomSetting) => void) => void;
+    
+    //Room
+    reconnect_room: (roomId: string, callback: (success: boolean, players: string[], isAdmin: boolean, settings?: RoomSetting) => void) => void;
     create_room: (playerName: string, roomSize: number, callback: (roomId: string) => void) => void;
     close_room: () => void;
-    start_game: () => void;
+    join_room: (roomId: string, playerName: string, callback: (success: boolean, msg?: string) => void) => void;
+    leave_room: () => void;
+    request_players: (callback: (players: string[]) => void) => void;
 
+    //Room Setting
     update_difficulty: (diff: number, callback: (settings: RoomSetting) => void) => void;
     update_game_time: (time: number, callback: (settings: RoomSetting) => void) => void
     update_field_size: (size: number, callback: (settings: RoomSetting) => void) => void
 
-    join_room: (roomId: string, playerName: string, callback: (success: boolean, isAdmin?: boolean, setting?: RoomSetting) => void) => void;
-    leave_room: () => void;
-    request_players: (callback: (players: string[]) => void) => void;
-    
+    //Game
+    start_game: () => void;
+    delete_game: () => void;
+
+    //Player Update (Game / Room)
     update_player_name: (name: string) => void;
-    player_add_action: (input: string) => void;
+    player_input_action: (input: string) => void;
     player_release_action: (input: string) => void;
     player_clear_action: () => void;
 }
@@ -38,6 +43,7 @@ interface InterServerEvents {}
 
 interface SocketData {
     roomId: string | null;
+    sessionId: string | null;
 }
 
 type GameSocket = Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>;
@@ -45,11 +51,13 @@ type GameSocket = Socket<ClientToServerEvents, ServerToClientEvents, InterServer
 export default class SocketServer {
     private io: Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>;
     private gameManager: GameManager;
+    private disconnectTimeouts: Map<string, NodeJS.Timeout>;
 
     constructor(server: http.Server, gameManager: GameManager) {
         this.gameManager = gameManager;
+        this.disconnectTimeouts = new Map();
         this.io = new Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>(server, {
-            cors: { 
+            cors: {
                 origin: ["http://127.0.0.1:5173", "http://localhost:5173"],
                 methods: ["GET", "POST"],
                 credentials: true
@@ -64,6 +72,14 @@ export default class SocketServer {
     }
 
     private initMiddleware(): void {
+        this.io.use((socket: GameSocket, next) => {
+            const sessionId = socket.handshake.auth.sessionId;
+            if (!sessionId) {
+                return next(new Error("Fehlende Session ID"));
+            }
+            socket.data.sessionId = sessionId;
+            next();
+        });
     }
 
     private initEvents(): void {
@@ -73,8 +89,7 @@ export default class SocketServer {
     }
 
     private handleConnection(socket: GameSocket): void {
-        socket.on("state_room", (callback) => {
-            const roomId: string | null = socket.data.roomId;
+        socket.on("state_room", (roomId, callback) => {
             if (!roomId) {
                 callback(false);
                 return;
@@ -87,9 +102,32 @@ export default class SocketServer {
             const room = this.isRoomAdmin(socket);
             callback(room != undefined, room?.setting);
         });
+
+        socket.on("reconnect_room", (roomId: string, callback) => {
+            if (roomId === null) {
+                callback(false, [], false);
+                return;
+            }
+            const room: Room | undefined = this.gameManager.getRoom(roomId);
+            if (room === undefined || !room.players[this.getUserId(socket)]) {
+                socket.data.roomId = null;
+                callback(false, [], false);
+                return;
+            }
+
+            socket.data.roomId = roomId;
+            socket.join(roomId);
+
+            const playerList = this.getPlayerListAsArray(room.players);
+            if (room.ownerId === this.getUserId(socket)) {
+                callback(true, playerList, true, room.setting);
+                return;
+            }
+            callback(true, playerList, false);
+        }) 
         
         socket.on("create_room", (playerName: string, roomSize: number, callback) => {
-            const roomInfo = this.gameManager.createRoom(socket.id, playerName, roomSize);
+            const roomInfo = this.gameManager.createRoom(this.getUserId(socket), playerName, roomSize);
             this.joinSocketToRoom(socket, roomInfo.id);
             callback(roomInfo.id);
         });
@@ -109,6 +147,14 @@ export default class SocketServer {
                 return;
             }
             this.gameManager.startGame(room.id);
+        });
+
+        socket.on("delete_game", () => {
+            const room = this.isRoomAdmin(socket);
+            if (room == undefined) {
+                return;
+            }
+            this.gameManager.deleteGame(room.id);
         });
 
         socket.on("update_difficulty", (diff: number, callback) => {
@@ -143,37 +189,47 @@ export default class SocketServer {
             if (!this.nameValidation(socket, playerName)) return;
             const room = this.gameManager.getRoom(roomId);
             if (!room) {
-                callback(false);
+                callback(false, "Der Raum existiert nicht!");
                 return;
             }
-            if (room.ownerId == socket.id) {
-                this.gameManager.updatePlayerName(roomId, socket.id, playerName);
-            
-                this.io.to(roomId).emit("room_players", Object.values(room.players));
-                callback(true, true, room.setting);
+            const userId = this.getUserId(socket);
+            const playersList = this.getPlayerListAsArray(room.players);
+            if (playersList.length >= room.setting.roomSize) {
+                callback(false, "Der Raum ist voll!");
                 return;
             }
-            const players = this.gameManager.addPlayer(roomId, socket.id, playerName);
+            if (playersList.find(name => name === playerName)) {
+                callback(false, "Der Name wurde bereits vergeben!");
+                return;
+            }
+            const players = this.gameManager.addPlayer(roomId, userId, playerName);
 
             this.joinSocketToRoom(socket, roomId);
-            this.io.to(roomId).emit("room_players", Object.values(players));
+            this.io.to(roomId).emit("room_players", this.getPlayerListAsArray(players));
             callback(true);
         });
         
         socket.on("leave_room", () => {
             const roomId = socket.data.roomId;
             if (!roomId) return;
-            const players = this.gameManager.removePlayer(roomId, socket.id);
+            const players = this.gameManager.removePlayer(roomId, this.getUserId(socket));
+            socket.leave(roomId);
             socket.data.roomId = null;
-            this.io.to(roomId).emit("room_players", Object.values(players)); 
+            
+            const playersList = this.getPlayerListAsArray(players);
+            if (playersList.length === 0) {
+                this.io.to(roomId).emit("closed_room");
+                return;
+            }
+            this.io.to(roomId).emit("room_players", playersList);
         });
         
         socket.on("request_players", (callback) => {
-            const roomId = socket.data.roomId;
-            if (!roomId) return;
-            const room = this.gameManager.getRoom(roomId);
+            const id = socket.data.roomId;
+            if (!id) return;
+            const room = this.gameManager.getRoom(id);
             if (room == undefined) return;
-            callback(Object.values(room.players));
+            callback(this.getPlayerListAsArray(room.players));
         });
         
         socket.on("update_player_name", (name) => {
@@ -181,18 +237,18 @@ export default class SocketServer {
             if (!roomId) return;
             const room = this.gameManager.getRoom(roomId);
             if (room == undefined) return;
-            this.gameManager.updatePlayerName(roomId, socket.id, name);
-            this.io.to(roomId).emit("room_players", Object.values(room.players)); 
+            this.gameManager.updatePlayerName(roomId, this.getUserId(socket), name);
+            this.io.to(roomId).emit("room_players", this.getPlayerListAsArray(room.players)); 
         });
 
-        socket.on("player_add_action", (input: string) => {
+        socket.on("player_input_action", (input: string) => {
             const roomId = socket.data.roomId;
             if (!roomId) return;
 
             const room = this.gameManager.getRoom(roomId);
             if (!room || !room.activeGame || !room.activeGame.isRunning()) return;
             const playerController = room.activeGame.getPlayerController();
-            playerController.addInputPlayerKey(socket.id, input);
+            playerController.addInputPlayerKey(this.getUserId(socket), input);
         });
 
         socket.on("player_release_action", (input: string) => {
@@ -202,7 +258,7 @@ export default class SocketServer {
             const room = this.gameManager.getRoom(roomId);
             if (!room || !room.activeGame || !room.activeGame.isRunning()) return;
             const playerController = room.activeGame.getPlayerController();
-            playerController.releaseInputPlayerKey(socket.id, input);
+            playerController.releaseInputPlayerKey(this.getUserId(socket), input);
         });
         
         socket.on("player_clear_action", () => {
@@ -212,7 +268,7 @@ export default class SocketServer {
             const room = this.gameManager.getRoom(roomId);
             if (!room || !room.activeGame || !room.activeGame.isRunning()) return;
             const playerController = room.activeGame.getPlayerController();
-            playerController.clearPlayerKeys(socket.id);
+            playerController.clearPlayerKeys(this.getUserId(socket));
         });
         
         socket.on("disconnect", () => {
@@ -220,11 +276,15 @@ export default class SocketServer {
         });
     }
 
+    private getUserId(socket: Socket): string {
+        return socket.data.sessionId;
+    }
+
     private isRoomAdmin(socket: GameSocket): Room | undefined {
         const roomId: string | null = socket.data.roomId;
         if (!roomId) return undefined;
         const room: Room | undefined = this.gameManager.getRoom(roomId);
-        if (room == undefined || room.ownerId != socket.id) {
+        if (room == undefined || room.ownerId != this.getUserId(socket)) {
             return undefined;
         }
         return room;
@@ -250,11 +310,29 @@ export default class SocketServer {
         }
         return true;
     }
-    
+
+    private getPlayerListAsArray(players: {[key: string]: string}): string[] {
+        return Object.values(players);
+    }
+
     private handleDisconnect(socket: GameSocket): void {
         const roomId = socket.data.roomId;
-        if (!roomId) return;
-        this.gameManager.removePlayer(roomId, socket.id);
+        const sessionId = socket.data.sessionId;
+        
+        if (!roomId || !sessionId) return;
+        
+        const timeout = setTimeout(() => {
+            const players = this.gameManager.removePlayer(roomId, socket.id);
+            const playerList = this.getPlayerListAsArray(players);
+            if (playerList.length === 0) {
+                this.io.to(roomId).emit("closed_room");
+            } else {
+                this.io.to(roomId).emit("room_players", playerList);
+            }
+            this.disconnectTimeouts.delete(sessionId);
+        }, 30000);
+
+        this.disconnectTimeouts.set(sessionId, timeout);
     }
 
     private startBroadcastLoop(): void {
@@ -263,8 +341,7 @@ export default class SocketServer {
             
             for (const [roomId, _] of activeSocketRooms) {
                 const room = this.gameManager.getRoom(roomId);
-                
-                if (room && room.activeGame && room.activeGame.isRunning()) {
+                if (room && room.activeGame) {
                     const state: GameStateDto = room.activeGame.render();
                     this.io.to(roomId).emit("game_tick", state);
                 }
