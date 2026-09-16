@@ -13,7 +13,7 @@ import BreakableWall from "./wall/BreakableWall";
 
 export default class Game {
     private static gameTickPerSec: number = 20;
-
+    
     private gameState: "loading" | "running" | "ending" = "loading";
     private roomId: string;
     private setting: GameSetting;
@@ -24,7 +24,7 @@ export default class Game {
     private bombController: BombController;
     private effectController: EffectController;
 
-    constructor(roomId:string, playerNames: { id: string, name: string }[], setting: GameSetting) {
+    constructor(roomId: string, playerNames: { id: string, name: string }[], setting: GameSetting) {
         this.roomId = roomId;
         this.setting = setting;
         this.gameTickScheduler = new GameTickScheduler(Game.gameTickPerSec);

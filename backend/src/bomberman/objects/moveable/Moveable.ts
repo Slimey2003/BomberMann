@@ -1,6 +1,5 @@
 import BoundingBox from "@project/utils/BoundingBox";
 import Vector from "@project/utils/Vector";
-import type Wall from "../wall/Wall";
 
 export default abstract class Moveable {
     private position: Vector;

@@ -10,29 +10,44 @@ import socket from "../../socket";
 export default function GameComponent({gameState}: {gameState: GameStateDto}) {
 
     useEffect(() => {
+        const pressedKeys = new Set<string>();
+
         const handleKeyDown = (e: KeyboardEvent) => {
             if (!e.key) return;
-            e.preventDefault();
-            socket.emit("player_input_action", e.key);
+            
+            if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " ", "w", "a", "s", "d"].includes(e.key)) {
+                e.preventDefault();
+                if (pressedKeys.has(e.key)) return;
+            
+                pressedKeys.add(e.key);
+                socket.emit("player_input_action", e.key);
+            }
         };
 
         const handleKeyUp = (e: KeyboardEvent) => {
             if (!e.key) return;
+            
+            if (!pressedKeys.has(e.key)) return;
+            
+            pressedKeys.delete(e.key);
             socket.emit("player_release_action", e.key);
         };
 
-        const handleClick = () => {
+        const handleBlur = () => {
+            pressedKeys.clear();
             socket.emit("player_clear_action");
         };
-        window.addEventListener("click", handleClick);
+
+        window.addEventListener("blur", handleBlur);
         window.addEventListener("keydown", handleKeyDown);
         window.addEventListener("keyup", handleKeyUp);
+        
         return () => {
-            window.removeEventListener("click", handleClick);
+            window.removeEventListener("blur", handleBlur);
             window.removeEventListener("keydown", handleKeyDown);
             window.removeEventListener("keyup", handleKeyUp);
         };
-    }, [socket]);
+    }, []);
 
 
     const formattedGameTime = gameState?.setting.gameTime ? formatMilliseconds(gameState.setting.gameTime) : "0:00";
@@ -57,8 +72,7 @@ export default function GameComponent({gameState}: {gameState: GameStateDto}) {
     return (
         <>
             <Container fluid className="py-4 min-vh-100 d-flex align-items-center" style={{ backgroundColor: "#1e1e2f" }}>
-
-                {gameState.type === "loading" &&
+                {(gameState.type === "loading") &&
                     (<WaitingOverlay waitingName="Spiel start"/>)
                 }
                 <Row className="w-100 justify-content-center align-items-center">
@@ -68,9 +82,12 @@ export default function GameComponent({gameState}: {gameState: GameStateDto}) {
                                 <Card.Title className="mb-4 text-info fw-bold fs-4">SPIELER</Card.Title>
                                 <ListGroup variant="flush">
                                     {gameState?.players.map(p => {
+                                        const isMe = p.id === (socket.auth as { sessionId: string })?.sessionId;
                                         return (
                                             <ListGroup.Item key={p.id} className="bg-transparent text-light border-secondary d-flex justify-content-between align-items-center px-0">
-                                                {p.name} 
+                                                <span className={isMe ? "text- fw-bold" : ""}>
+                                                    {p.name}
+                                                </span>
                                                 <Badge bg={
                                                             p.lives >= 3 
                                                                 ? "success"
@@ -88,7 +105,7 @@ export default function GameComponent({gameState}: {gameState: GameStateDto}) {
 
                     <Col xs={12} xl="auto" className="d-flex justify-content-center">
                         <div className="shadow-lg p-2 bg-dark">
-                            <Canvas gameState={gameState} width={canvasSize} height={canvasSize} /> {/** 510 klein 520 Groß **/}
+                            <Canvas gameState={gameState} width={canvasSize} height={canvasSize} />
                         </div>
                     </Col>
 
