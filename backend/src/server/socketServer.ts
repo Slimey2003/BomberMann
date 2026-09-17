@@ -280,8 +280,8 @@ export default class SocketServer {
         });
     }
 
-    private getUserId(socket: Socket): string {
-        return socket.data.sessionId;
+    private getUserId(socket: Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>): string {
+        return socket.data.sessionId ? socket.data.sessionId.split("-")[4] : "";
     }
 
     private isRoomAdmin(socket: GameSocket): Room | undefined {
