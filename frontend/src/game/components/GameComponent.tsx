@@ -82,7 +82,7 @@ export default function GameComponent({gameState}: {gameState: GameStateDto}) {
                                 <Card.Title className="mb-4 text-info fw-bold fs-4">SPIELER</Card.Title>
                                 <ListGroup variant="flush">
                                     {gameState?.players.map(p => {
-                                        const isMe = p.id === (socket.auth as { sessionId: string })?.sessionId;
+                                        const isMe = p.id === (socket.auth as { sessionId: string })?.sessionId.split("-")[4];
                                         return (
                                             <ListGroup.Item key={p.id} className="bg-transparent text-light border-secondary d-flex justify-content-between align-items-center px-0">
                                                 <span className={isMe ? "text- fw-bold" : ""}>
