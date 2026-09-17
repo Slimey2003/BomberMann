@@ -56,9 +56,13 @@ export default class SocketServer {
     constructor(server: http.Server, gameManager: GameManager) {
         this.gameManager = gameManager;
         this.disconnectTimeouts = new Map();
+        const origins = process.env.FRONTEND_URL 
+            ? process.env.FRONTEND_URL.split(",") 
+            : ["http://127.0.0.1:5173", "http://localhost:5173"];
+
         this.io = new Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>(server, {
             cors: {
-                origin: ["http://127.0.0.1:5173", "http://localhost:5173"],
+                origin: origins,
                 methods: ["GET", "POST"],
                 credentials: true
             }
