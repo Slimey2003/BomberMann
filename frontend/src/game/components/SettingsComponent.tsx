@@ -41,6 +41,10 @@ export default function SettingComponent({isAdmin, setSetting, setToastMessage}:
                 <Form
                     onSubmit={(e) => {
                         e.preventDefault();
+                        if (!playerName.match(/^[a-zA-Z0-9_]{3,10}$/)) {
+                            setToastMessage({ type: 'error', text: 'Spielername ungültig! (3-10 Zeichen, A-Z, 0-9, _)' });
+                            return;
+                        }
                         socket.emit("update_player_name", playerName, (msg?: string) => {
                             if (msg) setToastMessage({text: msg, type: "warning"})
                         });
