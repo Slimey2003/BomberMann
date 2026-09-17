@@ -35,11 +35,15 @@ export default class Effect {
         return this.id;
     }
 
-    public getScale() {
+    public getScale(): number {
         return this.scale;
     }
 
-    public addScale() {
+    public getMax(): number {
+        return this.stepMax;
+    }
+
+    public addScale(): void {
         if (this.scale >= this.stepMax) return;
         this.scale += this.stepScale;
     }

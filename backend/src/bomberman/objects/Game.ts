@@ -8,7 +8,7 @@ import type Player from "./moveable/Player";
 import type EffectCard from "./effect/EffectCard";
 import type Bomb from "./moveable/Bombs";
 import type ExplodeBomb from "./moveable/ExplodeBomb";
-import type { BombDto, EffectDto, GameSetting, GameStateDto, PlayerDto, WallDto } from "@project/utils";
+import type { BombDto, EffectCardDto, EffectDto, GameSetting, GameStateDto, PlayerDto, WallDto } from "@project/utils";
 import BreakableWall from "./wall/BreakableWall";
 
 export default class Game {
@@ -138,11 +138,19 @@ export default class Game {
         });
 
         const playerDtos: PlayerDto[] = players.map(p => {
+            const effects: EffectDto[] = p.getEffects().map(e => {
+                return {
+                    id: e.getId(),
+                    scale: e.getScale(),
+                    max: e.getMax(),
+                };
+            })
             return {
                 id: p.getId(),
                 name: p.getName(),
                 pos: p.getPosition(),
                 box: p.getBox(),
+                effects: effects,
                 lives: p.getLives(),
                 dead: p.isDead()
             }
@@ -168,7 +176,7 @@ export default class Game {
             })
         )
 
-        const effectDtos: EffectDto[] = effects.map(e => {
+        const effectDtos: EffectCardDto[] = effects.map(e => {
             return {
                 id: e.getEffectId(),
                 pos: e.getPosition(),

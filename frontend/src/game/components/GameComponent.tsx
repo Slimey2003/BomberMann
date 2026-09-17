@@ -68,6 +68,7 @@ export default function GameComponent({gameState}: {gameState: GameStateDto}) {
                 return 520;
         }
     }, [wallSize]);
+    const myPlayer = gameState.players.find(p => p.id === (socket.auth as { sessionId: string })?.sessionId.split("-")[4]);
 
     return (
         <>
@@ -82,10 +83,9 @@ export default function GameComponent({gameState}: {gameState: GameStateDto}) {
                                 <Card.Title className="mb-4 text-info fw-bold fs-4">SPIELER</Card.Title>
                                 <ListGroup variant="flush">
                                     {gameState?.players.map(p => {
-                                        const isMe = p.id === (socket.auth as { sessionId: string })?.sessionId.split("-")[4];
                                         return (
                                             <ListGroup.Item key={p.id} className="bg-transparent text-light border-secondary d-flex justify-content-between align-items-center px-0">
-                                                <span className={isMe ? "text- fw-bold" : ""}>
+                                                <span className={p.id == myPlayer?.id ? "text- fw-bold" : ""}>
                                                     {p.name}
                                                 </span>
                                                 <Badge bg={
@@ -126,7 +126,19 @@ export default function GameComponent({gameState}: {gameState: GameStateDto}) {
 
                                 <div>
                                     <Card.Title className="text-info fw-bold mb-2 fs-5">EFFEKTE</Card.Title>
+                                    
                                     <h2 className="mb-0">{gameState?.pickedEffectCount ?? 0} <span className="fs-5 text-secondary">/ {gameState?.maxEffects}</span></h2>
+                                    <div className="d-flex flex-warp flex-row">
+                                        {
+                                            myPlayer?.effects.map(e => {
+                                                return <div key={e.id}>
+                                                    <img src={`/svg/effect/effect_${e.id}.svg`} width="30px" height="30px" />
+                                                    <span>{e.scale + "/" + e.max}</span>
+                                                </div>
+                                            })
+                                        }
+                                    </div>
+                                    
                                 </div>
 
                                 <hr className="border-secondary my-1" />

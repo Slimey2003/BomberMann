@@ -81,11 +81,19 @@ export const GameSettingSchema = z.object({
 });
 export type GameSetting = z.infer<typeof GameSettingSchema>;
 
+export const EffectDtoSchema = z.object({
+    id: z.number(),
+    scale: z.number(),
+    max: z.number()
+});
+export type EffectDto = z.infer<typeof EffectDtoSchema>;
+
 export const PlayerDtoSchema = z.object({
     id: z.string(),
     name: z.string(),
     pos: VectorSchema,
     box: BoundingBoxSchema,
+    effects: z.array(EffectDtoSchema),
     lives: z.number(),
     dead: z.boolean()
 });
@@ -108,12 +116,14 @@ export const WallDtoSchema = z.object({
 });
 export type WallDto = z.infer<typeof WallDtoSchema>;
 
-export const EffectDtoSchema = z.object({
+export const EffectCardDtoSchema = z.object({
     id: z.number(),
     pos: VectorSchema,
     box: BoundingBoxSchema
 });
-export type EffectDto = z.infer<typeof EffectDtoSchema>;
+export type EffectCardDto = z.infer<typeof EffectCardDtoSchema>;
+
+
 
 export const GameStateDtoSchema = z.object({
     roomId: z.string(),
@@ -123,7 +133,7 @@ export const GameStateDtoSchema = z.object({
     players: z.array(PlayerDtoSchema),
     bombs: z.array(BombDtoSchema),
     walls: z.array(WallDtoSchema),
-    effects: z.array(EffectDtoSchema),
+    effects: z.array(EffectCardDtoSchema),
     pickedEffectCount: z.number(),
     bombPlaceCount: z.number(),
     maxEffects: z.number(),
