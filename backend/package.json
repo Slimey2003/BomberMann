@@ -7,7 +7,7 @@
   "type": "commonjs",
   "main": "src/server.ts",
   "scripts": {
-    "dev": "nodemon --watch src/ --exec tsx src/server.ts",
+    "start": "nodemon --watch src/ --exec tsx src/server.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },

@@ -9,7 +9,7 @@ const getSessionId = (): string => {
     return id;
 };
 
-const socket = io("http://localhost:8000", {
+const socket = io(`http://localhost:${import.meta.env.BACKEND_PORT ?? 3001}`, {
     autoConnect: false,
     reconnection: true,
     reconnectionAttempts: 5,
