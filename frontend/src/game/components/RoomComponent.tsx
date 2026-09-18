@@ -1,90 +1,258 @@
 import { useEffect, useState } from "react";
-import { Button, Card, Col, Container, Row } from "react-bootstrap";
-import GameManager from "../backend/GameManager";
+import { Button, Card, Col, Container, Form, Row } from "react-bootstrap";
 import SettingComponent from "./SettingsComponent";
-import type Game from "../backend/objects/Game";
-import type { GameStateDto } from "@project/utils";
 import GameComponent from "./GameComponent";
 import EndingOverlay from "./overlay/EndingOverlay";
+import { useNavigate, useParams } from "react-router-dom";
+import { type RoomSetting, type GameStateDto, GameStateDtoSchema } from "@project/utils";
+import socket from "../../socket";
+import '../../style/roomComponent.css'
+import WaitingOverlay from "./overlay/StartingOverlay";
+import ImageController from "../util/ImageController";
 
-export default function RoomComponent({userId, roomId, manager, onMenu}: {userId: number, roomId: string, manager: GameManager, onMenu: () => void}) {
+export default function RoomComponent({setToastMessage}: { 
+    setToastMessage: (toast: { type: string; text: string; }) => void;
+}) {
+    const navigate = useNavigate();
+    const { roomID } = useParams();
+
     const [gameState, setGameState] = useState<GameStateDto | null>(null);
-    const [game, setGame] = useState<Game | null>(null);
+
+    const [isAdmin, setIsAdmin] = useState<boolean>(false);
+    const [roomSetting, setRoomSetting] = useState<RoomSetting | null>(null);
     const [players, setPlayers] = useState<string[]>([""]);
+    const [joinPlayerName, setJoinPlayerName] = useState('');
+    const [lobby, setLobby] = useState<boolean>(true);
+
+    const [isJoining, setJoining] = useState(false);
 
     useEffect(() => {
-        setPlayers(manager.getSetting(roomId).players);
-    }, [manager, manager.getSetting(roomId)]);
-
-    useEffect(() => {
-        if (!game) return;
-        let animationFrameId: number;
-
-        const loop = () => {
-            const state = game?.render();
-            
-            if (state) {
-                setGameState(state);
+        const handleKeyUp = (e: KeyboardEvent) => {
+            if (!e.key) return;
+            if (e.key === "Escape") {
+                socket.emit("leave_room");
+                navigate("/");
             }
-            
-            animationFrameId = requestAnimationFrame(loop);
         };
 
-        animationFrameId = requestAnimationFrame(loop);
-
+        window.addEventListener("keyup", handleKeyUp);
+        
         return () => {
-            cancelAnimationFrame(animationFrameId);
+            window.removeEventListener("keyup", handleKeyUp);
         };
-    }, [game]);
+    }, []);
 
-    if (!roomId || roomId.length == 0 || userId == undefined) {
-        return <></>
+    useEffect(() => {
+        if (!socket.connected) {
+            setJoining(true);
+            socket.connect();
+            socket.emit("state_room", roomID, (state: boolean) => {
+                if (!state) {
+                    navigate("/");
+                    setToastMessage({text: "Der Raum existiert nicht mehr!", type: "error"});
+                } else {
+                    socket.emit("reconnect_room", roomID, (success: boolean, players: string[], isAdmin: boolean, settings?: RoomSetting) => {
+                        if (success) {
+                            setJoining(false);
+                            setPlayers(players);
+
+                            setIsAdmin(isAdmin);
+                            if (settings == undefined) {
+                                setRoomSetting(null);
+                                return;
+                            }
+                            setRoomSetting(settings);
+                        }
+                    });
+                }
+            });
+            
+        } else {
+            socket.emit('is_admin', (isAdmin: boolean, settings?: RoomSetting) => {
+                setIsAdmin(isAdmin);
+                if (settings == undefined) {
+                    setRoomSetting(null);
+                    return;
+                }
+                setRoomSetting(settings);
+            });
+            socket.emit("request_players", (players: string[]) => {
+                setPlayers(players);
+            });
+        }
+
+        function gameTick(state: GameStateDto) {
+            const parsedState = GameStateDtoSchema.parse(state);
+            setGameState(parsedState);
+            if (parsedState.type === "running") {
+                setLobby(false);
+            }
+        }
+
+        function roomClosed() {
+            setToastMessage({ type: 'error', text: "Der Raum wurde geschlossen" });
+            navigate("/");
+        }
+
+        function error(msg: string, roomID?: string, isJoining?: boolean) {
+            if (msg) setToastMessage({ type: 'error', text: msg });
+            if (roomID !== roomID && !isJoining) {
+                navigate("/");
+            }
+        }
+
+        socket.on("game_tick", gameTick);
+        socket.on("room_players", setPlayers);
+        socket.on('closed_room', roomClosed);
+        socket.on("error", error);
+        
+        return () => {
+            socket.off("game_tick", gameTick);
+            socket.off("room_players", setPlayers);
+            socket.off('closed_room', roomClosed);
+            socket.off("error", error);
+        };
+    }, [roomID, navigate, setToastMessage]);
+
+    useEffect(() => {
+        const loadImages = async () => {
+            const requiredImages = [
+                "background", 
+                "tombstone", 
+                "bomb/bomb",
+                "effect/effect_0",
+                "effect/effect_1",
+                "effect/effect_2",
+                "effect/effect_3",
+                "explosion/explosion_center", 
+                "explosion/explosion_up_down", 
+                "explosion/explosion_right_left",
+                "player/player_0",
+                "player/player_1",
+                "player/player_2",
+                "player/player_3",
+                "wall/breakableWall_0",
+                "wall/breakableWall_2",
+                "wall/breakableWall_3",
+                "wall/solidWall"
+            ];
+            
+            await ImageController.preloadImages(requiredImages);
+        }
+        loadImages();
+    }, []);
+
+    function handleJoinRoom() {
+        if (!roomID || !joinPlayerName) {
+            setToastMessage({ type: 'warning', text: 'Bitte gib Raum-ID und Spielernamen ein!' });
+            return;
+        }
+        if (!roomID.match("^[a-z0-9_]{7,7}$")) {
+            setToastMessage({ type: 'error', text: 'Raum ID ungültig! (7 Zeichen, a-z, 0-9, _)' });
+            return;
+        }
+        if (!joinPlayerName.match("^[a-zA-Z0-9_]{3,10}$")) {
+            setToastMessage({ type: 'error', text: 'Spielername ungültig! (3-10 Zeichen, A-Z, 0-9, _)' });
+            return;
+        }
+        socket.emit('join_room', roomID, joinPlayerName, (success: boolean, msg?: string) => {
+                if (msg) setToastMessage({type: "warning", text: msg})
+                if (!success) {
+                    navigate("/");
+                    return;
+                }
+                setJoining(false);
+            } 
+        );
     }
 
-    if (game && gameState) {
+    if (gameState && !lobby) {
         if (gameState.type === "ending") {
             return (
                 <EndingOverlay 
+                        isAdmin={isAdmin}
                         gameState={gameState}
                         onLeave={() => {
-                            setGame(null);
+                            setLobby(true);
                             setGameState(null);
-                        }} 
+                            if (isAdmin) {
+                                socket.emit("delete_game");
+                            }
+                        }}
                         onNewGame={() => {
-                            setGame(manager.startGame(roomId));
+                            if (isAdmin) {
+                                socket.emit("start_game");
+                            }
                         }}
                 />
             );
         }
-        return <GameComponent gameState={gameState} game={game}/>
+        return <GameComponent gameState={gameState}/>
     }
+
+    if (isJoining) {
+        return (
+            <Container fluid className="py-4 min-vh-100 d-flex flex-column align-items-center justify-content-center" style={{ backgroundColor: "#1e1e2f" }}>
+                <Card className="bg-dark text-light shadow-lg rounded-4" style={{ width: "100%", maxWidth: "500px", border: "1px solid #333" }}>
+                    <Card.Body className="p-4">
+                        <h2 className="text-primary mb-4 text-center fw-bold">Bomberman</h2>
+                        <Form
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                handleJoinRoom();
+                            }} 
+                            className="d-flex flex-column gap-3 mt-3"
+                        >
+                            <Form.Group>
+                                <Form.Label className="text-info fw-bold">Raum ID</Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    disabled={true}
+                                    value={roomID}
+                                    className="bg-secondary text-light border-0 rounded-3 p-2"
+                                    required
+                                />
+                            </Form.Group>
+                            <Form.Group>
+                                <Form.Label className="text-info fw-bold">Dein Spielername</Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    placeholder="Spielername"
+                                    value={joinPlayerName}
+                                    onChange={(e) => setJoinPlayerName(e.target.value)}
+                                    className="bg-secondary text-light border-0 rounded-3 p-2"
+                                    required
+                                />
+                            </Form.Group>
+
+                            <Button type="submit" variant="success" className="w-100 text-light fw-bold rounded-3 mt-2 py-2">
+                                Beitreten
+                            </Button>
+                        </Form>
+                    </Card.Body>
+                </Card>
+            </Container>
+        );
+    }
+
+    if (isAdmin && !roomSetting) return (<WaitingOverlay waitingName="Raum"/>)
 
     return (
         <>
-            <style>
-                {`
-                .setting-card {
-                    max-Width: 600px;
-                }
-                .responsive-border {
-                    border-bottom: 1px solid var(--bs-secondary);
-                }
-                @media (min-width: 768px) {
-                    .responsive-border {
-                        border-bottom: none !important;
-                        border-right: 1px solid var(--bs-secondary) !important;
-                    }
-                        
-                    .setting-card {
-                        min-Width: 700px;
-                    }
-                }
-                `}
-            </style>
             <Container fluid className="py-4 min-vh-100 d-flex flex-column align-items-center justify-content-center" style={{ backgroundColor: "#1e1e2f" }}>
                 <Card className="setting-card bg-dark text-light shadow-lg rounded-4 p-3" style={{ border: '1px solid #333' }}>
-                    <Card.Header> 
-                        <h1 className="text-primary">Room</h1>
+                    <Card.Header className="d-flex flex-column align-items-center justify-content-center"> 
+                        <h1 className="text-primary">Room: </h1>
+                        <h3 className="text-info "
+                            style={{
+                                cursor: "pointer",
+                                width: "140px"
+                            }}
+                            onClick={() => {
+                                navigator.clipboard.writeText(location.href);
+                            }}
+                        
+                        >{roomID}</h3>
                     </Card.Header>
                     <Card.Body className="p-0">
                         <Row className="m-0 h-100">
@@ -96,23 +264,25 @@ export default function RoomComponent({userId, roomId, manager, onMenu}: {userId
                             </Col>
                             
                             <Col md={7} className="p-3 d-flex flex-column gap-1 justify-content-center">
-                                <SettingComponent manager={manager} id={userId} roomId={roomId} isAdmin={true} ></SettingComponent>
+                                <SettingComponent setSetting={setRoomSetting} isAdmin={isAdmin} setToastMessage={setToastMessage}></SettingComponent>
                             </Col>
                         </Row>
-                        <Row className="m-4 gap-4">
-                            <Button variant="outline-secondary" className="w-100 text-info fw-bold rounded-3"
-                                disabled={manager.getSetting(roomId).roomSize>manager.getSetting(roomId).players.length
-                                }
-                                onClick={() => {
-                                    setGame(manager.startGame(roomId));
-                                }}
-                            >Game Starten</Button>
-                            <Button variant="outline-danger" className="w-100 text-white fw-bold rounded-3"
-                                disabled={manager.getSetting(roomId).roomSize>manager.getSetting(roomId).players.length
-                                }
-                                onClick={onMenu}
-                            >Zurück zum Menu</Button>
-                        </Row>
+                        {isAdmin && roomSetting && (
+                            <Row className="m-4 gap-4">
+                                <Button variant="outline-secondary" className="w-100 text-info fw-bold rounded-3"
+                                    disabled={players.length<2}
+                                    onClick={() => {
+                                        socket.emit("start_game");
+                                    }}
+                                >Game Starten</Button>
+                                <Button variant="outline-danger" className="w-100 text-white fw-bold rounded-3"
+                                    onClick={() => {
+                                        socket.emit("leave_room");
+                                        navigate("/");
+                                    }}
+                                >Zurück zum Menu</Button>
+                            </Row>
+                        )}
                     </Card.Body>
                 </Card>
             </Container>

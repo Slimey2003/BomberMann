@@ -5,7 +5,9 @@ import Direction from "@project/utils/Direction";
 import { drawExplosionBeam } from "../util/Utils";
 import ImageController from "../util/ImageController";
 
-export default function Canvas({gameState, width, height}: {gameState: GameStateDto | null, width: number, height: number}) {
+export default function Canvas({gameState, width, height}: {
+        gameState: GameStateDto | null, width: number, height: number}) {
+
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
     const imageControllerRef = useRef<ImageController | null>(null);
@@ -23,7 +25,7 @@ export default function Canvas({gameState, width, height}: {gameState: GameState
         
         ctxRef.current.clearRect(0, 0, width, height);
         render(gameState, ctxRef.current, imageControllerRef.current, width, height);
-    }, [gameState]);
+    }, [gameState, width, height]);
 
     return (
         <canvas
@@ -49,35 +51,41 @@ function render(gameState: GameStateDto, ctx: CanvasRenderingContext2D, imageCon
         imageController.drawImage(imageName, wall.box);
     }
 
-    for (const player of gameState.players) {
-        imageController.drawImage("player/player_" + player.id, player.box);
-    }
+    gameState.players.forEach((v, i) => {
+        if (v.dead) {
+            imageController.drawImage("tombstone", v.box);
+            return;
+        }
+        imageController.drawImage("player/player_" + i, v.box);
+    })
 
-    for (const effect of gameState.effects) {
+    gameState.effects.forEach(effect => {
         imageController.drawImage("effect/effect_" + effect.id, effect.box);
-    }
+    });
 
-    
     for (const bomb of gameState.bombs) {
         for (const vec of bomb.explode) {
             if (!vec.equals(Vector.nullVector)) {
                 const dir = Direction.fromVector(bomb.pos, vec);
-                let img: HTMLImageElement | undefined = imageController.getImage("explosion/explosion_center");
+                let img: HTMLImageElement | undefined = ImageController.getImage("explosion/explosion_center");
+                
                 if (!img) return;
+                
                 switch (dir) {
                     case Direction.NORTH:
                     case Direction.SOUTH:
-                        img = imageController.getImage("explosion/explosion_up_down");
+                        img = ImageController.getImage("explosion/explosion_up_down");
                         break;
                     case Direction.EAST:
                     case Direction.WEST:
-                        img = imageController.getImage("explosion/explosion_right_left");
+                        img = ImageController.getImage("explosion/explosion_right_left");
                         break;
                 }
                 drawExplosionBeam(ctx, img, vec, bomb.pos.getX(), bomb.pos.getY(), bomb.box.getWidth());
             }
         }
     }
+    
     for (const bomb of gameState.bombs) {
         if (!bomb.explode || bomb.explode.length === 0) {
             imageController.drawImage("bomb/bomb", bomb.box);
@@ -85,5 +93,4 @@ function render(gameState: GameStateDto, ctx: CanvasRenderingContext2D, imageCon
         }
         imageController.drawImage("explosion/explosion_center", bomb.box);
     }
-            
 }

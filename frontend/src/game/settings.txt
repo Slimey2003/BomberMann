@@ -1,8 +1,0 @@
-
-- Normal
-
-
-- Leben
-- Spieler Anzahl (Raum Size)
-- Down Time
-- Field Größe

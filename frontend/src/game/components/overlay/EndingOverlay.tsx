@@ -1,7 +1,7 @@
 import { Button, Card, Col, Row } from "react-bootstrap";
 import { formatMilliseconds, type GameStateDto } from "@project/utils";
 
-export default function EndingOverlay({ gameState, onLeave, onNewGame }: { gameState: GameStateDto | null, onLeave: () => void, onNewGame: () => void }) {
+export default function EndingOverlay({ isAdmin, gameState, onLeave, onNewGame }: { isAdmin: boolean, gameState: GameStateDto | null, onLeave: () => void, onNewGame: () => void }) {
     if (!gameState || gameState.type !== "ending") {
         return <></>;
     }
@@ -60,11 +60,12 @@ export default function EndingOverlay({ gameState, onLeave, onNewGame }: { gameS
                         <Button variant="outline-light" className="w-100 rounded-3 py-2 fw-bold" onClick={onLeave}>
                             Zurück zur Lobby
                         </Button>
-                        <Button variant="outline-light" className="w-100 rounded-3 py-2 fw-bold" onClick={onNewGame}>
-                            Neues Game
-                        </Button>
+                        {isAdmin && gameState.players.length >= 2 && (
+                            <Button variant="outline-light" className="w-100 rounded-3 py-2 fw-bold" onClick={onNewGame}>
+                                Neues Game
+                            </Button>
+                        )}
                     </Row>
-                    
                 </Card.Body>
             </Card>
         </div>
