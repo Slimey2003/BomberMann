@@ -1,0 +1,21 @@
+.setting-card {
+    min-Width: 300px !important;
+}
+.responsive-border {
+    border-bottom: 1px solid var(--bs-secondary);
+}
+@media (min-width: 768px) {
+    .responsive-border {
+        border-bottom: none !important;
+        border-right: 1px solid var(--bs-secondary) !important;
+    }
+        
+    .setting-card {
+        min-Width: 750px !important;
+    }
+}
+@media (min-width: 1024px) {
+    .setting-card {
+        min-Width: 1000px !important;
+    }
+}

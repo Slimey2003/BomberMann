@@ -1,0 +1,71 @@
+import type { Delayed } from "../../util/DelayedQueue";
+import type Vector from "@project/utils/Vector";
+import type Bomb from "./Bombs";
+
+export default class ExplodeBomb implements Delayed {
+    private static EXPOSITION_TIME: number = 1000; //sec
+    
+    private bomb: Bomb;
+    private explodeTime: number;
+    
+    private expositionRange: number = 1;
+    private expositionStrange: number = 1;
+
+    private calculatedRange: Vector[] = [];
+    private playerTakeDamage: string[] = [];
+
+    constructor(bomb: Bomb) {
+        this.bomb = bomb;
+        this.explodeTime = Date.now();
+    }
+
+    public getPlayerTakeDamage(): string[] {
+        return this.playerTakeDamage;
+    }
+
+    public getId(): string {
+        return this.bomb.getId();
+    }
+
+    public getBomb() {
+        return this.bomb;
+    }
+
+    public getExplodeTime(): number {
+        return this.explodeTime;
+    }
+
+    public getRange(): number {
+        return this.expositionRange;
+    }
+
+    public getStrange(): number {
+        return this.expositionStrange;
+    }
+
+    public getCalculatedRange(): Vector[] {
+        return this.calculatedRange;
+    }
+
+    public setExplodeTime() {
+        this.explodeTime = Date.now();
+    }
+
+    public setCalculatedRange(range: Vector[]) {
+        this.calculatedRange = range;
+    }
+
+    public addRange(range: number): ExplodeBomb {
+        this.expositionRange += range;
+        return this;
+    }
+
+    public addStrange(strange: number): ExplodeBomb {
+        this.expositionStrange += strange;
+        return this;
+    }
+
+    public getDelay(): number {
+        return (this.explodeTime + ExplodeBomb.EXPOSITION_TIME) - Date.now();
+    }
+}

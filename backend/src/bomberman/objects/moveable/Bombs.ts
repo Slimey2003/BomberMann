@@ -1,0 +1,39 @@
+import type { Delayed } from "../../util/DelayedQueue";
+import type Vector from "@project/utils/Vector";
+import Moveable from "./Moveable";
+
+export default class Bomb extends Moveable implements Delayed {
+    private static EXPOSITION_EXPIRATION: number = 4000; //4 sec
+    private static PROTECTION_TIME: number = 1000; //2 sec
+    private id: string;
+    private playerId: string;
+    private placeTime: number;
+    
+
+    constructor(playerId: string, startPosition: Vector, height:number, width: number) {
+        super(startPosition, height, width);
+        this.placeTime = Date.now();
+        this.playerId = playerId;
+        this.id = crypto.randomUUID();
+    }
+
+    public getId(): string {
+        return this.id;
+    }
+
+    public getPlayerId(): string {
+        return this.playerId;
+    }
+
+    public getPlacedTime(): number {
+        return this.placeTime;
+    }
+
+    public noCollision(): boolean {
+        return ((this.placeTime + Bomb.PROTECTION_TIME) - Date.now()) > 0 || this.getDelay() <= 1000;
+    }
+
+    public getDelay(): number {
+        return (this.placeTime + Bomb.EXPOSITION_EXPIRATION) - Date.now();
+    }
+}

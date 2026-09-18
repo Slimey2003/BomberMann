@@ -1,38 +1,53 @@
-import Game from "../backend/objects/Game";
-import { formatMilliseconds, type GameStateDto } from "@project/utils";
+import { formatMilliseconds, getEffectTypes, type GameStateDto } from "@project/utils";
 import Canvas from "./CanvasComponent";
 import { Card, Col, Container, ListGroup, ProgressBar, Row, Badge } from "react-bootstrap";
 import { useEffect, useMemo } from "react";
-import StartingOverlay from "./overlay/StartingOverlay";
+import WaitingOverlay from "./overlay/StartingOverlay";
+import socket from "../../socket";
 
 
 
-export default function GameComponent({gameState, game}: {gameState: GameStateDto, game: Game}) {
+export default function GameComponent({gameState}: {gameState: GameStateDto}) {
 
     useEffect(() => {
+        const pressedKeys = new Set<string>();
+
         const handleKeyDown = (e: KeyboardEvent) => {
             if (!e.key) return;
-            e.preventDefault();
-            game.getPlayerController().addInputPlayerKey(0, e.key);
+            
+            if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " ", "w", "a", "s", "d"].includes(e.key)) {
+                e.preventDefault();
+                if (pressedKeys.has(e.key)) return;
+            
+                pressedKeys.add(e.key);
+                socket.emit("player_input_action", e.key);
+            }
         };
 
         const handleKeyUp = (e: KeyboardEvent) => {
             if (!e.key) return;
-            game.getPlayerController().releaseInputPlayerKey(0, e.key);
+            
+            if (!pressedKeys.has(e.key)) return;
+            
+            pressedKeys.delete(e.key);
+            socket.emit("player_release_action", e.key);
         };
 
-        const handleClick = () => {
-            game.getPlayerController().clearPlayerKeys(0);
-        };  
-        window.addEventListener("click", handleClick);
+        const handleBlur = () => {
+            pressedKeys.clear();
+            socket.emit("player_clear_action");
+        };
+
+        window.addEventListener("blur", handleBlur);
         window.addEventListener("keydown", handleKeyDown);
         window.addEventListener("keyup", handleKeyUp);
+        
         return () => {
-            window.removeEventListener("click", handleClick);
+            window.removeEventListener("blur", handleBlur);
             window.removeEventListener("keydown", handleKeyDown);
             window.removeEventListener("keyup", handleKeyUp);
         };
-    }, [game]);
+    }, []);
 
 
     const formattedGameTime = gameState?.setting.gameTime ? formatMilliseconds(gameState.setting.gameTime) : "0:00";
@@ -53,13 +68,13 @@ export default function GameComponent({gameState, game}: {gameState: GameStateDt
                 return 520;
         }
     }, [wallSize]);
+    const myPlayer = gameState.players.find(p => p.id === (socket.auth as { sessionId: string })?.sessionId.split("-")[4]);
 
     return (
         <>
             <Container fluid className="py-4 min-vh-100 d-flex align-items-center" style={{ backgroundColor: "#1e1e2f" }}>
-
-                {gameState.type === "loading" &&
-                    (<StartingOverlay/>)
+                {(gameState.type === "loading") &&
+                    (<WaitingOverlay waitingName="Spiel start"/>)
                 }
                 <Row className="w-100 justify-content-center align-items-center">
                     <Col xs={12} xl={3} className="d-flex justify-content-center justify-content-xl-end mb-4 mb-xl-0">
@@ -70,7 +85,9 @@ export default function GameComponent({gameState, game}: {gameState: GameStateDt
                                     {gameState?.players.map(p => {
                                         return (
                                             <ListGroup.Item key={p.id} className="bg-transparent text-light border-secondary d-flex justify-content-between align-items-center px-0">
-                                                {p.name} 
+                                                <span className={p.id == myPlayer?.id ? "text- fw-bold" : ""}>
+                                                    {p.name}
+                                                </span>
                                                 <Badge bg={
                                                             p.lives >= 3 
                                                                 ? "success"
@@ -88,7 +105,7 @@ export default function GameComponent({gameState, game}: {gameState: GameStateDt
 
                     <Col xs={12} xl="auto" className="d-flex justify-content-center">
                         <div className="shadow-lg p-2 bg-dark">
-                            <Canvas gameState={gameState} width={canvasSize} height={canvasSize} /> {/** 510 klein 520 Groß **/}
+                            <Canvas gameState={gameState} width={canvasSize} height={canvasSize} />
                         </div>
                     </Col>
 
@@ -109,7 +126,37 @@ export default function GameComponent({gameState, game}: {gameState: GameStateDt
 
                                 <div>
                                     <Card.Title className="text-info fw-bold mb-2 fs-5">EFFEKTE</Card.Title>
-                                    <h2 className="mb-0">{gameState?.pickedEffectCount ?? 0} <span className="fs-5 text-secondary">/ {gameState?.maxEffects}</span></h2>
+                                    
+                                    <h2 className="mb-3">
+                                        {gameState?.pickedEffectCount ?? 0} <span className="fs-5 text-secondary">/ {gameState?.maxEffects}</span>
+                                    </h2>
+                                    
+                                    <div className="d-flex flex-wrap justify-content-center align-content-center gap-2">
+                                        
+                                        {
+                                            getEffectTypes().map(e => {
+                                                const pEffect = myPlayer?.effects.find(p => p.id == e.id);
+                                                const isMax = pEffect ? (pEffect.level === pEffect.max) : false;
+                                                return (
+                                                    <div 
+                                                        key={"effect_"+e}
+                                                        className={`d-flex align-items-center gap-2 px-3 py-1 rounded-pill border ${isMax ? 'border-warning bg-warning bg-opacity-10' : 'border-secondary bg-secondary bg-opacity-25'}`}
+                                                    >
+                                                        <img 
+                                                            src={`/svg/effect/effect_${e.id}.svg`} 
+                                                            width="24px" 
+                                                            height="24px" 
+                                                            alt={`Effect ${e.id}`}
+                                                            style={{ filter: "drop-shadow(0px 2px 2px rgba(0,0,0,0.5))" }}
+                                                        />
+                                                        <span className={`fw-bold mb-0 ${isMax ? 'text-warning' : 'text-light'}`} style={{ fontSize: "0.9rem" }}>
+                                                            {pEffect?.level ?? 0} <span className="text-secondary opacity-75">/ {e.maxLevel}</span>
+                                                        </span>
+                                                    </div>
+                                                );
+                                            })
+                                        }
+                                    </div>
                                 </div>
 
                                 <hr className="border-secondary my-1" />
