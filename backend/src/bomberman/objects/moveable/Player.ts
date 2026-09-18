@@ -63,12 +63,12 @@ export default class Player extends Moveable {
      * Ändernt auf basis des (wenn vorhanden) Speed Effekts den gegeben Vector für die Velocity
      */
     public setVelocity(vector: Vector) {
-        const eff = this.getEffect(EffectType.SPEED);
+        const eff = this.getEffect(EffectType.SPEED.id);
         if (!eff) {
             super.setVelocity(vector);
             return;
         }
-        super.setVelocity(vector.scale(eff.getScale()));
+        super.setVelocity(vector.scale(eff.getValue()));
     }
 
     public getEffect(id: number) {
@@ -85,9 +85,9 @@ export default class Player extends Moveable {
 
     public getMaxPlacedBomb() {
         let max = 1;
-        const eff = this.getEffect(EffectType.STACK);
+        const eff = this.getEffect(EffectType.STACK.id);
         if (eff) {
-            max += eff.getScale();
+            max += eff.getValue();
         }
         return max;
     }

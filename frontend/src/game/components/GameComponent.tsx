@@ -1,4 +1,4 @@
-import { formatMilliseconds, type GameStateDto } from "@project/utils";
+import { formatMilliseconds, getEffectTypes, type GameStateDto } from "@project/utils";
 import Canvas from "./CanvasComponent";
 import { Card, Col, Container, ListGroup, ProgressBar, Row, Badge } from "react-bootstrap";
 import { useEffect, useMemo } from "react";
@@ -127,18 +127,36 @@ export default function GameComponent({gameState}: {gameState: GameStateDto}) {
                                 <div>
                                     <Card.Title className="text-info fw-bold mb-2 fs-5">EFFEKTE</Card.Title>
                                     
-                                    <h2 className="mb-0">{gameState?.pickedEffectCount ?? 0} <span className="fs-5 text-secondary">/ {gameState?.maxEffects}</span></h2>
-                                    <div className="d-flex flex-warp flex-row">
+                                    <h2 className="mb-3">
+                                        {gameState?.pickedEffectCount ?? 0} <span className="fs-5 text-secondary">/ {gameState?.maxEffects}</span>
+                                    </h2>
+                                    
+                                    <div className="d-flex flex-wrap justify-content-center align-content-center gap-2">
+                                        
                                         {
-                                            myPlayer?.effects.map(e => {
-                                                return <div key={e.id}>
-                                                    <img src={`/svg/effect/effect_${e.id}.svg`} width="30px" height="30px" />
-                                                    <span>{e.scale + "/" + e.max}</span>
-                                                </div>
+                                            getEffectTypes().map(e => {
+                                                const pEffect = myPlayer?.effects.find(p => p.id == e.id);
+                                                const isMax = pEffect ? (pEffect.level === pEffect.max) : false;
+                                                return (
+                                                    <div 
+                                                        key={"effect_"+e}
+                                                        className={`d-flex align-items-center gap-2 px-3 py-1 rounded-pill border ${isMax ? 'border-warning bg-warning bg-opacity-10' : 'border-secondary bg-secondary bg-opacity-25'}`}
+                                                    >
+                                                        <img 
+                                                            src={`/svg/effect/effect_${e.id}.svg`} 
+                                                            width="24px" 
+                                                            height="24px" 
+                                                            alt={`Effect ${e.id}`}
+                                                            style={{ filter: "drop-shadow(0px 2px 2px rgba(0,0,0,0.5))" }}
+                                                        />
+                                                        <span className={`fw-bold mb-0 ${isMax ? 'text-warning' : 'text-light'}`} style={{ fontSize: "0.9rem" }}>
+                                                            {pEffect?.level ?? 0} <span className="text-secondary opacity-75">/ {e.maxLevel}</span>
+                                                        </span>
+                                                    </div>
+                                                );
                                             })
                                         }
                                     </div>
-                                    
                                 </div>
 
                                 <hr className="border-secondary my-1" />

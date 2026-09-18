@@ -1,33 +1,30 @@
 import { EffectType } from "@project/utils";
 
 export default class Effect {
-    private static SPEED = {step: 0.075, max: 1.225, default: 1.075};
-    private static STACK = {step: 1, max: 3, default: 1};
-    private static STRANGE = {step: 1, max: 3, default: 1};
-    private static RANGE = {step: 1, max: 3, default: 1};
-
     private id: number;
-    private scale: number;
-    private stepScale: number;
-    private stepMax: number;
+    private value: number;
+    private stepValue: number;
+    private level: number;
+    private maxLevel: number;
 
-    constructor(id: number, scale: {step: number, max: number, default: number}) {
-        this.id = id;
-        this.scale = scale.default;
-        this.stepScale = scale.step;
-        this.stepMax = scale.max;
+    constructor(config: {id: number, step: number, defaultVal: number, maxLevel: number}) {
+        this.id = config.id;
+        this.value = config.defaultVal;
+        this.stepValue = config.step;
+        this.level = 1;
+        this.maxLevel = config.maxLevel;
     }
 
     public static getEffectById(id: number): Effect | undefined {
         switch(id) {
-            case EffectType.SPEED:
-                return new Effect(id, Effect.SPEED);
-            case EffectType.STRANGE:
-                return new Effect(id, Effect.STRANGE);
-            case EffectType.RANGE:
-                return new Effect(id, Effect.RANGE);
-            case EffectType.STACK:
-                return new Effect(id, Effect.STACK);
+            case EffectType.SPEED.id:
+                return new Effect(EffectType.SPEED);
+            case EffectType.STRANGE.id:
+                return new Effect(EffectType.STRANGE);
+            case EffectType.RANGE.id:
+                return new Effect(EffectType.RANGE);
+            case EffectType.STACK.id:
+                return new Effect(EffectType.STACK);
         }
     }
 
@@ -35,16 +32,21 @@ export default class Effect {
         return this.id;
     }
 
-    public getScale(): number {
-        return this.scale;
+    public getValue(): number {
+        return this.value;
     }
 
-    public getMax(): number {
-        return this.stepMax;
+    public getLevel(): number {
+        return this.level;
+    }
+
+    public getMaxLevel(): number {
+        return this.maxLevel;
     }
 
     public addScale(): void {
-        if (this.scale >= this.stepMax) return;
-        this.scale += this.stepScale;
+        if (this.level >= this.maxLevel) return;
+        this.level += 1;
+        this.value = Math.round((this.value + this.stepValue) * 1000) / 1000;
     }
 }
