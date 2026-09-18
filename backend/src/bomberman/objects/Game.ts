@@ -141,8 +141,8 @@ export default class Game {
             const effects: EffectDto[] = p.getEffects().map(e => {
                 return {
                     id: e.getId(),
-                    scale: e.getScale(),
-                    max: e.getMax(),
+                    level: e.getLevel(),
+                    max: e.getMaxLevel(),
                 };
             })
             return {

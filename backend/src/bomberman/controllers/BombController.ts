@@ -170,10 +170,10 @@ export default class BombController extends Controller {
             const effRange = player.getEffect(EffectType.RANGE);
             const effStrange = player.getEffect(EffectType.STRANGE);
             if (effRange) {
-                explode.addRange(effRange.getScale());
+                explode.addRange(effRange.getValue());
             }
             if (effStrange) {
-                explode.addStrange(effStrange.getScale());
+                explode.addStrange(effStrange.getValue());
             }
         }
 

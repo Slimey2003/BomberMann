@@ -22,11 +22,15 @@ export function formatMilliseconds(ms: number): string {
 };
 
 export const EffectType = {
-    SPEED: 0,
-    STRANGE: 1,
-    RANGE: 2,
-    STACK: 3,
+    SPEED: {id: 0, step: 0.075, defaultVal: 1.075, maxLevel: 3},
+    STRANGE: {id: 1, step: 1, defaultVal: 1, maxLevel: 3},
+    RANGE: {id: 2, step: 1, defaultVal: 1, maxLevel: 3},
+    STACK: {id: 3, step: 1, defaultVal: 1, maxLevel: 3},
 };
+
+export function getEffectTypes(): {id: number, maxLevel: number}[] {
+    return [EffectType.SPEED, EffectType.STACK, EffectType.STRANGE, EffectType.RANGE];
+}
 
 export const VectorSchema = z.object({
     x: z.number(),
@@ -83,7 +87,7 @@ export type GameSetting = z.infer<typeof GameSettingSchema>;
 
 export const EffectDtoSchema = z.object({
     id: z.number(),
-    scale: z.number(),
+    level: z.number(),
     max: z.number()
 });
 export type EffectDto = z.infer<typeof EffectDtoSchema>;
