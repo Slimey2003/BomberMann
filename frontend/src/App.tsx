@@ -1,5 +1,5 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
-import DashboardComponent from './game/components/DashboardComponent'
+import DashboardComponent from './side/DashboardComponent'
 import RoomComponent from './game/components/RoomComponent'
 import { useState } from 'react';
 import ToastNotification from './side/ToastNotification';
