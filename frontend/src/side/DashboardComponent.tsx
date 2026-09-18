@@ -1,4 +1,4 @@
-import MainMenuComponent from "./MenuComponent";
+import MainMenuComponent from "../game/components/MenuComponent";
 
 export default function DashboardComponent({
     setToastMessage
