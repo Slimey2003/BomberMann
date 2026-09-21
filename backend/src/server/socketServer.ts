@@ -3,6 +3,9 @@ import type { GameStateDto, RoomSetting } from "@project/utils";
 import GameManager from "../bomberman/GameManager";
 import http from "http";
 import type { Room } from "../utils/util";
+import type KeycloakAuth from "../auth/KeycloakAuth";
+import type { JwtPayload } from "jsonwebtoken";
+import type { UUID } from "crypto";
 
 interface ClientToServerEvents {
     state_room: (roomId: string, callback: (state: boolean) => void) => void;
@@ -43,7 +46,8 @@ interface InterServerEvents {}
 
 interface SocketData {
     roomId: string | null;
-    sessionId: string | null;
+    userId: UUID | undefined
+    user: string | JwtPayload | undefined
 }
 
 type GameSocket = Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>;
@@ -52,8 +56,10 @@ export default class SocketServer {
     private io: Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>;
     private gameManager: GameManager;
     private disconnectTimeouts: Map<string, NodeJS.Timeout>;
+    private authService: KeycloakAuth;
 
-    constructor(server: http.Server, gameManager: GameManager) {
+    constructor(server: http.Server, authService: KeycloakAuth, gameManager: GameManager) {
+        this.authService = authService;
         this.gameManager = gameManager;
         this.disconnectTimeouts = new Map();
         const origins = process.env.FRONTEND_URL 
@@ -74,16 +80,31 @@ export default class SocketServer {
         this.initEvents();
         this.startBroadcastLoop();
     }
+    
+    private authenticateSocket = async (socket: Socket, next: (error?: Error) => void) => {
+        const token = socket.handshake.auth.token;
+        
+        if (!token) {
+            return next(new Error('Authentication error'));
+        }
+
+        try {
+            const decodedUser = await this.authService.verifyToken(token);
+            if (!decodedUser) {
+                next(new Error('Authentication error'));
+                return;
+            }
+
+            socket.data.userId = decodedUser ? decodedUser["sub"] : undefined;
+            socket.data.user = decodedUser;
+            next();
+        } catch (error) {
+            return next(new Error('Authentication error'));
+        }
+    }
 
     private initMiddleware(): void {
-        this.io.use((socket: GameSocket, next) => {
-            const sessionId = socket.handshake.auth.sessionId;
-            if (!sessionId) {
-                return next(new Error("Fehlende Session ID"));
-            }
-            socket.data.sessionId = sessionId;
-            next();
-        });
+        this.io.use(this.authenticateSocket);
     }
 
     private initEvents(): void {
@@ -281,7 +302,7 @@ export default class SocketServer {
     }
 
     private getUserId(socket: Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>): string {
-        return socket.data.sessionId ? socket.data.sessionId.split("-")[4] : "";
+        return socket.data.userId ?? "";
     }
 
     private isRoomAdmin(socket: GameSocket): Room | undefined {
@@ -321,7 +342,7 @@ export default class SocketServer {
 
     private handleDisconnect(socket: GameSocket): void {
         const roomId = socket.data.roomId;
-        const sessionId = socket.data.sessionId;
+        const sessionId = socket.data.userId;
         
         if (!roomId || !sessionId) return;
         

@@ -2,18 +2,18 @@ import express from "express";
 import * as path from "path";
 import http from "http";
 import * as fs from "fs";
-import routerRoom from "../routes/roomRoutes";
-import type GameManager from "../bomberman/GameManager";
+import routerAuth from "../routes/AuthRouter";
+import type KeycloakService from "../service/KeycloakService";
 
 export class ExpressServer {
     private app: express.Express;
     private server: http.Server;
     private port: number;
-    private gameManager: GameManager;
+    private keyService: KeycloakService;
 
-    constructor(port: number, gameManager: GameManager) {
+    constructor(port: number, keyService: KeycloakService) {
+        this.keyService = keyService;
         this.port = port;
-        this.gameManager = gameManager;
         this.app = express();
         this.server = http.createServer(this.app);
         
@@ -36,7 +36,7 @@ export class ExpressServer {
     }
 
     private initRoutes(): void {
-        this.app.use('/api/room', routerRoom(this.gameManager));
+        this.app.use('/api', routerAuth(this.keyService));
     }
 
     public getServer(): http.Server {

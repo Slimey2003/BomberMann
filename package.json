@@ -5,5 +5,9 @@
     "frontend",
     "backend",
     "utils"
-  ]
+  ],
+  "dependencies": {
+    "jsonwebtoken": "^9.0.3",
+    "jwks-rsa": "^4.1.0"
+  }
 }

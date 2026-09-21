@@ -7,6 +7,17 @@ RUN npm install --legacy-peer-deps
 COPY frontend/ frontend/
 COPY utils/ utils/
 WORKDIR /app/frontend
+
+ARG VITE_KC_GAME_ID
+ARG VITE_KC_REALM
+ARG VITE_GAME_PORT
+ARG VITE_IS_DEV
+
+ENV VITE_KC_GAME_ID=$VITE_KC_GAME_ID
+ENV VITE_KC_REALM=$VITE_KC_REALM
+ENV VITE_GAME_PORT=$VITE_GAME_PORT
+ENV VITE_IS_DEV=$VITE_IS_DEV
+
 RUN npm run build
 
 FROM node:22-alpine
