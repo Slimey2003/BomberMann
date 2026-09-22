@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Form, Button, Tabs, Tab } from 'react-bootstrap';
 import { AuthService } from './AuthService';
+import MESSAGES, { REGEX } from '@project/utils/message';
 
 interface AuthOverlayProps {
     authService: AuthService;
@@ -40,23 +41,22 @@ export default function AuthOverlay({ authService, setToastMessage, onSuccess }:
 
     const handleRegister = async (event: React.SubmitEvent) => {
             event.preventDefault();
-            const passwordRegex = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&+=])(?=\S+$).{8,20}$/;
-            if (!password.match(passwordRegex)) {
-                setToastMessage({text: "Das Passwort muss 8 bis 20 Zeichen lang sein und mindestens eine Zahl, einen Großbuchstaben, einen Kleinbuchstaben sowie ein Sonderzeichen enthalten.", type:"error"})
+            if (!password.match(REGEX.REGISTER_PASSWORD)) {
+                setToastMessage({text: MESSAGES.REGISTER_PASSWORD_INVALID, type:"error"})
                 return;
             }
             try {
                 const status = await authService.register(username, email, password);
                 if (status === 201) {
-                    setToastMessage({text: "Registrierung war Erfolgreich Log dich nun ein!", type:"success"});
+                    setToastMessage({text: MESSAGES.REGISTER_VALID, type:"success"});
                     setUsername('');
                     setEmail('');
                     setPassword('');
                 } else {
                     if (status === 429) {
-                        setToastMessage({text: "Zu viele Registerungs versuche!, bitte versuchen sie es später erneut!", type: "error"});
+                        setToastMessage({text: MESSAGES.RATE_LIMIT_MESSAGE, type: "error"});
                     }
-                    setToastMessage({text: "Es ist was schief gelaufen. Versuch es später erneut!", type:"error"});
+                    setToastMessage({text: MESSAGES.SERVER_ERROR_FALLBACK, type:"error"});
                 }
             } catch (err: any) {
                 setToastMessage({text: err.message, type: "error"});

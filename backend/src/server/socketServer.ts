@@ -7,6 +7,7 @@ import type KeycloakAuth from "../auth/KeycloakAuth";
 import type { JwtPayload } from "jsonwebtoken";
 import type { UUID } from "crypto";
 import RateLimiter from "../service/RateLimiter";
+import MESSAGES, {REGEX} from "@project/utils/message";
 
 interface ClientToServerEvents {
     state_room: (roomId: string, callback: (state: boolean, isRateLimited: boolean) => void) => void;
@@ -371,16 +372,16 @@ export default class SocketServer {
     }
 
     private roomValidation(socket: GameSocket, roomId: string): boolean {
-        if (!roomId.match("^[a-z0-9_]{7,7}$")) {
-            socket.emit("error", "Raum ID ungültig! (7 Zeichen, a-z, 0-9, _)");
+        if (!roomId.match(REGEX.ROOM_ID)) {
+            socket.emit("error", MESSAGES.ROOM_ID_INVALID);
             return false;
         }
         return true;
     }
 
     private nameValidation(socket: GameSocket, name: string): boolean {
-        if (!name.match("^[a-zA-Z0-9_]{3,10}$")) {
-            socket.emit("error", "Spielername ungültig! (3-10 Zeichen, A-Z, 0-9, _)");
+        if (!name.match(REGEX.PLAYER_NAME)) {
+            socket.emit("error", MESSAGES.ROOM_PLAYER_NAME_INVALID);
             return false;
         }
         return true;

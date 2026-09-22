@@ -10,6 +10,7 @@ import '../../style/roomComponent.css'
 import WaitingOverlay from "./overlay/StartingOverlay";
 import ImageController from "../util/ImageController";
 import type { AuthService } from "../../auth/AuthService";
+import MESSAGES, {REGEX} from "@project/utils/message"
 
 export default function RoomComponent({authService, setToastMessage}: { 
     authService: AuthService,
@@ -56,12 +57,12 @@ export default function RoomComponent({authService, setToastMessage}: {
 
                 socket.emit("state_room", roomID, (state: boolean, isRateLimited: boolean) => {
                     if (isRateLimited) {
-                        setToastMessage({text: "Du hast zuviele anfragen gesendet! Versuch es später erneut!", type: "error"});
+                        setToastMessage({text: MESSAGES.RATE_LIMIT_MESSAGE, type: "error"});
                         return;
                     }
                     if (!state) {
                         navigate("/");
-                        setToastMessage({text: "Der Raum existiert nicht mehr!", type: "error"});
+                        setToastMessage({text: MESSAGES.ROOM_INVALID, type: "error"});
                     } else {
                         socket.emit("reconnect_room", roomID, (success: boolean, players: string[], isAdmin: boolean, settings?: RoomSetting) => {
                             if (success) {
@@ -108,7 +109,7 @@ export default function RoomComponent({authService, setToastMessage}: {
         }
 
         function roomClosed() {
-            setToastMessage({ type: 'error', text: "Der Raum wurde geschlossen" });
+            setToastMessage({ type: 'error', text: MESSAGES.ROOM_CLOSED });
             navigate("/");
         }
 
@@ -162,15 +163,15 @@ export default function RoomComponent({authService, setToastMessage}: {
 
     function handleJoinRoom() {
         if (!roomID || !joinPlayerName) {
-            setToastMessage({ type: 'warning', text: 'Bitte gib Raum-ID und Spielernamen ein!' });
+            setToastMessage({ type: 'warning', text: MESSAGES.ROOM_ID_OR_PLAYER_NAME_EMPTY });
             return;
         }
-        if (!roomID.match("^[a-z0-9_]{7,7}$")) {
-            setToastMessage({ type: 'error', text: 'Raum ID ungültig! (7 Zeichen, a-z, 0-9, _)' });
+        if (!roomID.match(REGEX.ROOM_ID)) {
+            setToastMessage({ type: 'error', text: MESSAGES.ROOM_ID_INVALID });
             return;
         }
-        if (!joinPlayerName.match("^[a-zA-Z0-9_]{3,10}$")) {
-            setToastMessage({ type: 'error', text: 'Spielername ungültig! (3-10 Zeichen, A-Z, 0-9, _)' });
+        if (!joinPlayerName.match(REGEX.PLAYER_NAME)) {
+            setToastMessage({ type: 'error', text: MESSAGES.ROOM_PLAYER_NAME_INVALID });
             return;
         }
         socket.emit('join_room', roomID, joinPlayerName, (success: boolean, isRateLimited: boolean, msg?: string) => {
