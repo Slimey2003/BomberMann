@@ -6,30 +6,31 @@ import type { Room } from "../utils/util";
 import type KeycloakAuth from "../auth/KeycloakAuth";
 import type { JwtPayload } from "jsonwebtoken";
 import type { UUID } from "crypto";
+import RateLimiter from "../service/RateLimiter";
 
 interface ClientToServerEvents {
-    state_room: (roomId: string, callback: (state: boolean) => void) => void;
+    state_room: (roomId: string, callback: (state: boolean, isRateLimited: boolean) => void) => void;
     is_admin: (callback: (isAdmin: boolean, settings?: RoomSetting) => void) => void;
     
     //Room
     reconnect_room: (roomId: string, callback: (success: boolean, players: string[], isAdmin: boolean, settings?: RoomSetting) => void) => void;
-    create_room: (playerName: string, roomSize: number, callback: (roomId: string) => void) => void;
+    create_room: (playerName: string, roomSize: number, callback: (roomId: string, isRateLimited: boolean) => void) => void;
     close_room: () => void;
-    join_room: (roomId: string, playerName: string, callback: (success: boolean, msg?: string) => void) => void;
+    join_room: (roomId: string, playerName: string, callback: (success: boolean, isRateLimited: boolean, msg?: string) => void) => void;
     leave_room: () => void;
     request_players: (callback: (players: string[]) => void) => void;
 
     //Room Setting
-    update_difficulty: (diff: number, callback: (settings: RoomSetting) => void) => void;
-    update_game_time: (time: number, callback: (settings: RoomSetting) => void) => void
-    update_field_size: (size: number, callback: (settings: RoomSetting) => void) => void
+    update_difficulty: (diff: number, callback: (settings: RoomSetting, isRateLimited: boolean) => void) => void;
+    update_game_time: (time: number, callback: (settings: RoomSetting, isRateLimited: boolean) => void) => void
+    update_field_size: (size: number, callback: (settings: RoomSetting, isRateLimited: boolean) => void) => void
 
     //Game
     start_game: () => void;
     delete_game: () => void;
 
     //Player Update (Game / Room)
-    update_player_name: (name: string) => void;
+    update_player_name: (name: string, callback: (isRateLimited: boolean, msg?: string) => void) => void;
     player_input_action: (input: string) => void;
     player_release_action: (input: string) => void;
     player_clear_action: () => void;
@@ -46,8 +47,8 @@ interface InterServerEvents {}
 
 interface SocketData {
     roomId: string | null;
-    userId: UUID | undefined
-    user: string | JwtPayload | undefined
+    userId: UUID | undefined;
+    user: string | JwtPayload | undefined;
 }
 
 type GameSocket = Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>;
@@ -57,10 +58,12 @@ export default class SocketServer {
     private gameManager: GameManager;
     private disconnectTimeouts: Map<string, NodeJS.Timeout>;
     private authService: KeycloakAuth;
+    private rateLimiter: RateLimiter;
 
     constructor(server: http.Server, authService: KeycloakAuth, gameManager: GameManager) {
         this.authService = authService;
         this.gameManager = gameManager;
+        this.rateLimiter = new RateLimiter(10_000, 10, 60_000); //innerhalb von 10 Sek maximal 10 Anfragen, alle 60 Sek wird auf geräumt. 
         this.disconnectTimeouts = new Map();
         const origins = process.env.FRONTEND_URL 
             ? process.env.FRONTEND_URL.split(",") 
@@ -118,12 +121,16 @@ export default class SocketServer {
 
     private handleConnection(socket: GameSocket): void {
         socket.on("state_room", (roomId, callback) => {
+            if (this.isRateLimited(socket)) {
+                callback(false, true);
+                return;
+            }
             if (!roomId) {
-                callback(false);
+                callback(false, false);
                 return;
             }
             const room: Room | undefined = this.gameManager.getRoom(roomId);
-            callback(room != undefined);
+            callback(room != undefined, false);
         });
         
         socket.on("is_admin", (callback) => {
@@ -136,6 +143,7 @@ export default class SocketServer {
                 callback(false, [], false);
                 return;
             }
+            if (this.isRateLimited(socket)) return;
             const room: Room | undefined = this.gameManager.getRoom(roomId);
             if (room === undefined || !room.players[this.getUserId(socket)]) {
                 socket.data.roomId = null;
@@ -155,9 +163,13 @@ export default class SocketServer {
         }) 
         
         socket.on("create_room", (playerName: string, roomSize: number, callback) => {
+            if (this.isRateLimited(socket)) {
+                callback("", true);
+                return;
+            }
             const roomInfo = this.gameManager.createRoom(this.getUserId(socket), playerName, roomSize);
             this.joinSocketToRoom(socket, roomInfo.id);
-            callback(roomInfo.id);
+            callback(roomInfo.id, false);
         });
         
         socket.on("close_room", () => {
@@ -186,55 +198,71 @@ export default class SocketServer {
         });
 
         socket.on("update_difficulty", (diff: number, callback) => {
+            if (this.isRateLimited(socket)) {
+                callback({gameTime: 0, difficulty: 0, canvasSize: 0, roomSize: 0}, true);
+                return;
+            }
             const room = this.isRoomAdmin(socket);
             if (room == undefined) {
                 return;
             }
             this.gameManager.updateDifficulty(room.id, diff);
-            callback(room.setting);
+            callback(room.setting, false);
         });
         
         socket.on("update_game_time", (time: number, callback) => {
+            if (this.isRateLimited(socket)) {
+                callback({gameTime: 0, difficulty: 0, canvasSize: 0, roomSize: 0}, true);
+                return;
+            }
             const room = this.isRoomAdmin(socket);
             if (room == undefined) {
                 return;
             }
             this.gameManager.updateGameTime(room.id, time)
-            callback(room.setting);
+            callback(room.setting, false);
         });
         
         socket.on("update_field_size", (size: number, callback) => {
+            if (this.isRateLimited(socket)) {
+                callback({gameTime: 0, difficulty: 0, canvasSize: 0, roomSize: 0}, true);
+                return;
+            }
             const room = this.isRoomAdmin(socket);
             if (room == undefined) {
                 return;
             }
             this.gameManager.updateCanvasSize(room.id, size)
-            callback(room.setting);
+            callback(room.setting, false);
         });
 
         socket.on("join_room", (roomId: string, playerName: string, callback) => {
+            if (this.isRateLimited(socket)) {
+                callback(false, true);
+                return;
+            }
             if (!this.roomValidation(socket, roomId)) return;
             if (!this.nameValidation(socket, playerName)) return;
             const room = this.gameManager.getRoom(roomId);
             if (!room) {
-                callback(false, "Der Raum existiert nicht!");
+                callback(false, false, "Der Raum existiert nicht!");
                 return;
             }
             const userId = this.getUserId(socket);
             const playersList = this.getPlayerListAsArray(room.players);
             if (playersList.length >= room.setting.roomSize) {
-                callback(false, "Der Raum ist voll!");
+                callback(false, false, "Der Raum ist voll!");
                 return;
             }
             if (playersList.find(name => name === playerName)) {
-                callback(false, "Der Name wurde bereits vergeben!");
+                callback(false, false, "Der Name wurde bereits vergeben!");
                 return;
             }
             const players = this.gameManager.addPlayer(roomId, userId, playerName);
 
             this.joinSocketToRoom(socket, roomId);
             this.io.to(roomId).emit("room_players", this.getPlayerListAsArray(players));
-            callback(true);
+            callback(true, false);
         });
         
         socket.on("leave_room", () => {
@@ -260,13 +288,28 @@ export default class SocketServer {
             callback(this.getPlayerListAsArray(room.players));
         });
         
-        socket.on("update_player_name", (name) => {
+        socket.on("update_player_name", (playerName, callback) => {
+            if (this.isRateLimited(socket)) {
+                callback(true);
+                return;
+            }
             const roomId = socket.data.roomId;
             if (!roomId) return;
+            if (!this.roomValidation(socket, roomId)) return;
+            if (!this.nameValidation(socket, playerName)) return;
             const room = this.gameManager.getRoom(roomId);
-            if (room == undefined) return;
-            this.gameManager.updatePlayerName(roomId, this.getUserId(socket), name);
-            this.io.to(roomId).emit("room_players", this.getPlayerListAsArray(room.players)); 
+            if (!room) {
+                callback(false, "Der Raum existiert nicht!");
+                return;
+            }
+            const playersList = this.getPlayerListAsArray(room.players);
+            if (playersList.find(name => name === playerName)) {
+                callback(false, "Der Name wurde bereits vergeben!");
+                return;
+            }
+            this.gameManager.updatePlayerName(roomId, this.getUserId(socket), playerName);
+            this.io.to(roomId).emit("room_players", this.getPlayerListAsArray(room.players));
+            callback(false);
         });
 
         socket.on("player_input_action", (input: string) => {
@@ -302,6 +345,10 @@ export default class SocketServer {
         socket.on("disconnect", () => {
             this.handleDisconnect(socket);
         });
+    }
+
+    private isRateLimited(socket: Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>) {
+        return this.rateLimiter.isLimited(socket.data.userId);
     }
 
     private getUserId(socket: Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>): string {

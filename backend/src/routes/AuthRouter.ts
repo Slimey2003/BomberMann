@@ -8,10 +8,10 @@ const signupSchema = z.object({
     password: z.string().regex(/^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&+=])(?=\S+$).{8,20}$/),
 });
 
-export default function routerAuth(keycloakService: KeycloakService): Router {
+export default function routerAuth(apiLimiter: express.RequestHandler, keycloakService: KeycloakService): Router {
     const router: Router = express.Router();
 
-    router.post('/signup', async (req: Request, res: Response) => {
+    router.post('/signup', apiLimiter, async (req: Request, res: Response) => {
         const signupBody = signupSchema.safeParse(req.body);
         if (!signupBody.success) {
             res.status(400);

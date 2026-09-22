@@ -38,7 +38,7 @@ export class AuthService {
         this.saveTokens(data.access_token, data.refresh_token);
     }
 
-    public async register(username: string, email: string, password: string): Promise<boolean> {
+    public async register(username: string, email: string, password: string): Promise<number> {
         const response = await fetch(`${this.baseUrl}:${this.backendPort}/api/signup`, {
             method: 'POST',
             headers: {
@@ -47,7 +47,7 @@ export class AuthService {
             body: JSON.stringify({ username, email, password })
         });
 
-        return response.ok;
+        return response.status;
     }
 
     private saveTokens(accessToken: string, refreshToken: string): void {
