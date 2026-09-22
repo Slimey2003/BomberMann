@@ -46,13 +46,16 @@ export default function AuthOverlay({ authService, setToastMessage, onSuccess }:
                 return;
             }
             try {
-                const bool = await authService.register(username, email, password);
-                if (bool) {
+                const status = await authService.register(username, email, password);
+                if (status === 201) {
                     setToastMessage({text: "Registrierung war Erfolgreich Log dich nun ein!", type:"success"});
                     setUsername('');
                     setEmail('');
                     setPassword('');
                 } else {
+                    if (status === 429) {
+                        setToastMessage({text: "Zu viele Registerungs versuche!, bitte versuchen sie es später erneut!", type: "error"});
+                    }
                     setToastMessage({text: "Es ist was schief gelaufen. Versuch es später erneut!", type:"error"});
                 }
             } catch (err: any) {

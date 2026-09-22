@@ -1,12 +1,14 @@
-import express from "express";
+import express, { type NextFunction } from "express";
 import * as path from "path";
 import http from "http";
 import * as fs from "fs";
 import routerAuth from "../routes/AuthRouter";
 import type KeycloakService from "../service/KeycloakService";
+import rateLimit from "express-rate-limit";
 
 export class ExpressServer {
     private app: express.Express;
+    private apiLimiter: express.RequestHandler;
     private server: http.Server;
     private port: number;
     private keyService: KeycloakService;
@@ -16,6 +18,18 @@ export class ExpressServer {
         this.port = port;
         this.app = express();
         this.server = http.createServer(this.app);
+        this.apiLimiter = rateLimit({
+            windowMs: 15 * 60 * 1000, // 15 Min
+            max: 5,
+            standardHeaders: true,
+            legacyHeaders: false,
+            handler: (req, res, next) => {
+                res.status(429).json({
+                    success: false,
+                    message: "Zu viele Registerungs versuche!, bitte versuchen sie es später erneut!"
+                });
+            }
+        });
         
         //With KI :D ermöglicht das der Backend Server das gebaute Frontend im Docker erkennt und darauf umleited wenn man localhost:3001/ macht 
         const publicPath = path.join(process.cwd(), "public");
@@ -36,7 +50,7 @@ export class ExpressServer {
     }
 
     private initRoutes(): void {
-        this.app.use('/api', routerAuth(this.keyService));
+        this.app.use('/api', routerAuth(this.apiLimiter, this.keyService));
     }
 
     public getServer(): http.Server {

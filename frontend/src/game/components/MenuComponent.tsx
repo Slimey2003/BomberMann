@@ -46,7 +46,11 @@ export default function MainMenuComponent({
             return;
         }
         
-        socket.emit('create_room', joinPlayerName, playerSize, (roomId: string) => {
+        socket.emit('create_room', joinPlayerName, playerSize, (roomId: string, isRateLimited: boolean) => {
+            if (isRateLimited) {
+                setToastMessage({text: "Du hast zuviele anfragen gesendet! Versuch es später erneut!", type: "error"});
+                return;
+            }
             if (roomId) {
                 navigate(`/match/${roomId}`);
             }

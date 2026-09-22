@@ -54,7 +54,11 @@ export default function RoomComponent({authService, setToastMessage}: {
                     return;
                 }
 
-                socket.emit("state_room", roomID, (state: boolean) => {
+                socket.emit("state_room", roomID, (state: boolean, isRateLimited: boolean) => {
+                    if (isRateLimited) {
+                        setToastMessage({text: "Du hast zuviele anfragen gesendet! Versuch es später erneut!", type: "error"});
+                        return;
+                    }
                     if (!state) {
                         navigate("/");
                         setToastMessage({text: "Der Raum existiert nicht mehr!", type: "error"});
@@ -74,10 +78,7 @@ export default function RoomComponent({authService, setToastMessage}: {
                         });
                     }
                 });
-                
             } else {
-                
-
                 socket.emit('is_admin', (isAdmin: boolean, settings?: RoomSetting) => {
                     setIsAdmin(isAdmin);
                     if (settings == undefined) {
@@ -172,7 +173,11 @@ export default function RoomComponent({authService, setToastMessage}: {
             setToastMessage({ type: 'error', text: 'Spielername ungültig! (3-10 Zeichen, A-Z, 0-9, _)' });
             return;
         }
-        socket.emit('join_room', roomID, joinPlayerName, (success: boolean, msg?: string) => {
+        socket.emit('join_room', roomID, joinPlayerName, (success: boolean, isRateLimited: boolean, msg?: string) => {
+                if (isRateLimited) {
+                    if (msg) setToastMessage({type: "error", text: msg});
+                    return;
+                }
                 if (msg) setToastMessage({type: "warning", text: msg})
                 if (!success) {
                     navigate("/");
