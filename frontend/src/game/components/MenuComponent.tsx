@@ -4,6 +4,7 @@ import { SettingSlider } from "./SettingsComponent";
 import socket, {connectSocket} from "../../socket";
 import { useNavigate } from "react-router-dom";
 import type { AuthService } from "../../auth/AuthService";
+import MESSAGES, { REGEX } from "@project/utils/message";
 
 export default function MainMenuComponent({
     authService,
@@ -41,14 +42,14 @@ export default function MainMenuComponent({
     }, [connecting])
 
     function handleCreateRoom() {
-        if (!joinPlayerName.match(/^[a-zA-Z0-9_]{3,10}$/)) {
-            setToastMessage({ type: 'error', text: 'Spielername ungültig! (3-10 Zeichen, A-Z, 0-9, _)' });
+        if (!joinPlayerName.match(REGEX.PLAYER_NAME)) {
+            setToastMessage({ type: 'error', text: MESSAGES.ROOM_PLAYER_NAME_INVALID });
             return;
         }
         
         socket.emit('create_room', joinPlayerName, playerSize, (roomId: string, isRateLimited: boolean) => {
             if (isRateLimited) {
-                setToastMessage({text: "Du hast zuviele anfragen gesendet! Versuch es später erneut!", type: "error"});
+                setToastMessage({text: MESSAGES.RATE_LIMIT_MESSAGE, type: "error"});
                 return;
             }
             if (roomId) {
@@ -59,15 +60,15 @@ export default function MainMenuComponent({
 
     function handleJoinRoom() {
         if (!joinRoomId || !joinPlayerName) {
-            setToastMessage({ type: 'warning', text: 'Bitte gib Raum-ID und Spielernamen ein!' });
+            setToastMessage({ type: 'warning', text: MESSAGES.ROOM_ID_OR_PLAYER_NAME_EMPTY });
             return;
         }
-        if (!joinRoomId.match(/^[a-z0-9_]{7,7}$/)) {
-            setToastMessage({ type: 'error', text: 'Raum ID ungültig! (7 Zeichen, a-z, 0-9, _)' });
+        if (!joinRoomId.match(REGEX.ROOM_ID)) {
+            setToastMessage({ type: 'error', text: MESSAGES.ROOM_ID_INVALID });
             return;
         }
-        if (!joinPlayerName.match(/^[a-zA-Z0-9_]{3,10}$/)) {
-            setToastMessage({ type: 'error', text: 'Spielername ungültig! (3-10 Zeichen, A-Z, 0-9, _)' });
+        if (!joinPlayerName.match(REGEX.PLAYER_NAME)) {
+            setToastMessage({ type: 'error', text: MESSAGES.ROOM_PLAYER_NAME_INVALID });
             return;
         }
         
