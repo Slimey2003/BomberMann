@@ -9,4 +9,3 @@ const expressServer = new ExpressServer(parseInt(process.env.GAME_PORT ?? "3001"
 expressServer.start();
 const socketServer = new SocketServer(expressServer.getServer(), keycloakService.getAuth(), gameManager);
 socketServer.start();
-console.log(process.env.VITE_IS_IN_DEV);

@@ -85,20 +85,23 @@ export default class SocketServer {
         const token = socket.handshake.auth.token;
         
         if (!token) {
+            console.log("Error no Token!");
             return next(new Error('Authentication error'));
         }
 
         try {
             const decodedUser = await this.authService.verifyToken(token);
             if (!decodedUser) {
+                console.log("Error no DecodedUser")
                 next(new Error('Authentication error'));
                 return;
             }
-
+            console.log(decodedUser);
             socket.data.userId = decodedUser ? decodedUser["sub"] : undefined;
             socket.data.user = decodedUser;
             next();
         } catch (error) {
+            console.log(error);
             return next(new Error('Authentication error'));
         }
     }

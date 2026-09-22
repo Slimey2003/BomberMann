@@ -134,6 +134,23 @@ export class AuthService {
         };
     }
 
+    public async getUserProfile(): Promise<{ id: string, displayName: string } | null> {
+        const token = await this.getToken();
+        
+        if (!token) {
+            return null;
+        }
+
+        const payloadBase64 = token.split('.')[1];
+        const decodedJson = atob(payloadBase64);
+        const decoded = JSON.parse(decodedJson);
+
+        return {
+            id: decoded.sub,
+            displayName: decoded.preferred_username
+        };
+    }
+
     public getItem(name: string) {
         return localStorage.getItem(name) ?? sessionStorage.getItem(name);
     }
