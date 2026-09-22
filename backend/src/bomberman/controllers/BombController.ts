@@ -167,8 +167,8 @@ export default class BombController extends Controller {
         bomb.setPosition(this.modifyPosition(bomb.getPosition()));
         const explode = new ExplodeBomb(bomb);
         if (player) {
-            const effRange = player.getEffect(EffectType.RANGE);
-            const effStrange = player.getEffect(EffectType.STRANGE);
+            const effRange = player.getEffect(EffectType.RANGE.id);
+            const effStrange = player.getEffect(EffectType.STRANGE.id);
             if (effRange) {
                 explode.addRange(effRange.getValue());
             }

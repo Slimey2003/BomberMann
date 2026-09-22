@@ -86,7 +86,7 @@ describe("Game", () => {
         it("placeEffect", () => {
             if(!game) return;
             if (!controller) return;
-            controller.placeEffect(new Vector(10, 10), EffectType.SPEED);
+            controller.placeEffect(new Vector(10, 10), EffectType.SPEED.id);
             expect(controller.getEffectCards().length).toBe(1);
         })
     });
@@ -164,10 +164,10 @@ describe("Game", () => {
                 if (!controller) return;
                 const player = controller.getPlayers()[0];
                 player.setPosition(new Vector(10, 10));
-                controller.getEffectController().placeEffect(new Vector(10, 10), EffectType.SPEED);
+                controller.getEffectController().placeEffect(new Vector(10, 10), EffectType.SPEED.id);
                 controller.addInputPlayerKey("110", "s");
                 controller.updateMovement();
-                const eff = player.getEffect(EffectType.SPEED);
+                const eff = player.getEffect(EffectType.SPEED.id);
                 expect(eff).not.toBe(undefined)
                 controller.releaseInputPlayerKey("110", "s");
                 player.clearEffects();
@@ -175,7 +175,7 @@ describe("Game", () => {
             it("Can used it", () => {
                 if (!controller) return;
                 const player = controller.getPlayers()[0];
-                player.addEffectOrChange(EffectType.SPEED);
+                player.addEffectOrChange(EffectType.SPEED.id);
                 controller.addInputPlayerKey("110", "s");
                 expect(player.getMovement().getY()).toBe(4);
                 controller.releaseInputPlayerKey("110", "s");
@@ -266,8 +266,8 @@ describe("Game", () => {
                 if (!controller) return;
                 const bomb: Bomb = new Bomb("110", new Vector(20, 10), 50, 50);
                 const player = controller.getPlayerController().getPlayers()[0];
-                player.addEffectOrChange(EffectType.RANGE);
-                player.addEffectOrChange(EffectType.STRANGE);
+                player.addEffectOrChange(EffectType.RANGE.id);
+                player.addEffectOrChange(EffectType.STRANGE.id);
                 const explode: ExplodeBomb = controller.modifyBomb(bomb);
                 expect(explode.getRange()).toBe(60);
                 expect(explode.getStrange()).toBe(3);
