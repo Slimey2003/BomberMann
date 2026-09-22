@@ -4,9 +4,9 @@ import { AuthService } from "../auth/AuthService";
 import MainMenuComponent from "../game/components/MenuComponent";
 import { Header } from "./Header";
 
-const authService = new AuthService('http://localhost');
 
-export default function DashboardComponent({ setToastMessage }: { 
+export default function DashboardComponent({ authService, setToastMessage }: { 
+        authService: AuthService
         setToastMessage: (toast: { type: string; text: string; }) => void;
     }) {
 
@@ -19,7 +19,7 @@ export default function DashboardComponent({ setToastMessage }: {
                 <AuthOverlay authService={authService} setToastMessage={setToastMessage} onSuccess={() => setIsAuthenticated(true)}/>
             )}
             {isAuthenticated && (
-                <MainMenuComponent setToastMessage={setToastMessage}/>
+                <MainMenuComponent authService={authService} setToastMessage={setToastMessage}/>
             )}
         </>
     )

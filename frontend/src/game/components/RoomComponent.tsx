@@ -5,17 +5,20 @@ import GameComponent from "./GameComponent";
 import EndingOverlay from "./overlay/EndingOverlay";
 import { useNavigate, useParams } from "react-router-dom";
 import { type RoomSetting, type GameStateDto, GameStateDtoSchema } from "@project/utils";
-import socket from "../../socket";
+import socket, { connectSocket } from "../../socket";
 import '../../style/roomComponent.css'
 import WaitingOverlay from "./overlay/StartingOverlay";
 import ImageController from "../util/ImageController";
+import type { AuthService } from "../../auth/AuthService";
 
-export default function RoomComponent({setToastMessage}: { 
+export default function RoomComponent({authService, setToastMessage}: { 
+    authService: AuthService,
     setToastMessage: (toast: { type: string; text: string; }) => void;
 }) {
     const navigate = useNavigate();
     const { roomID } = useParams();
 
+    const [userProfile, setUserProfile] = useState<{id:string, displayName: string} | null>(null);
     const [gameState, setGameState] = useState<GameStateDto | null>(null);
 
     const [isAdmin, setIsAdmin] = useState<boolean>(false);
@@ -43,43 +46,57 @@ export default function RoomComponent({setToastMessage}: {
     }, []);
 
     useEffect(() => {
-        if (!socket.connected) {
-            setJoining(true);
-            socket.connect();
-            socket.emit("state_room", roomID, (state: boolean) => {
-                if (!state) {
+        const socketConnection = async () => {
+            if (!socket.connected) {
+                setJoining(true);
+                if (!await connectSocket(authService)) {
                     navigate("/");
-                    setToastMessage({text: "Der Raum existiert nicht mehr!", type: "error"});
-                } else {
-                    socket.emit("reconnect_room", roomID, (success: boolean, players: string[], isAdmin: boolean, settings?: RoomSetting) => {
-                        if (success) {
-                            setJoining(false);
-                            setPlayers(players);
-
-                            setIsAdmin(isAdmin);
-                            if (settings == undefined) {
-                                setRoomSetting(null);
-                                return;
-                            }
-                            setRoomSetting(settings);
-                        }
-                    });
-                }
-            });
-            
-        } else {
-            socket.emit('is_admin', (isAdmin: boolean, settings?: RoomSetting) => {
-                setIsAdmin(isAdmin);
-                if (settings == undefined) {
-                    setRoomSetting(null);
                     return;
                 }
-                setRoomSetting(settings);
-            });
-            socket.emit("request_players", (players: string[]) => {
-                setPlayers(players);
-            });
+
+                socket.emit("state_room", roomID, (state: boolean) => {
+                    if (!state) {
+                        navigate("/");
+                        setToastMessage({text: "Der Raum existiert nicht mehr!", type: "error"});
+                    } else {
+                        socket.emit("reconnect_room", roomID, (success: boolean, players: string[], isAdmin: boolean, settings?: RoomSetting) => {
+                            if (success) {
+                                setJoining(false);
+                                setPlayers(players);
+
+                                setIsAdmin(isAdmin);
+                                if (settings == undefined) {
+                                    setRoomSetting(null);
+                                    return;
+                                }
+                                setRoomSetting(settings);
+                            }
+                        });
+                    }
+                });
+                
+            } else {
+                
+
+                socket.emit('is_admin', (isAdmin: boolean, settings?: RoomSetting) => {
+                    setIsAdmin(isAdmin);
+                    if (settings == undefined) {
+                        setRoomSetting(null);
+                        return;
+                    }
+                    setRoomSetting(settings);
+                });
+                socket.emit("request_players", (players: string[]) => {
+                    setPlayers(players);
+                });
+            }
+            
+            const userProfile = await authService.getUserProfile();
+            if (!userProfile) return;
+            setUserProfile(userProfile);
+            setJoinPlayerName(userProfile.displayName);
         }
+        socketConnection();
 
         function gameTick(state: GameStateDto) {
             const parsedState = GameStateDtoSchema.parse(state);
@@ -187,7 +204,7 @@ export default function RoomComponent({setToastMessage}: {
                 />
             );
         }
-        return <GameComponent gameState={gameState}/>
+        return <GameComponent userProfile={userProfile} gameState={gameState}/>
     }
 
     if (isJoining) {

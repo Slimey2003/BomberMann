@@ -1,25 +1,44 @@
 import { useEffect, useState } from "react";
 import { Button, Card, Container, Form, Tab, Tabs } from "react-bootstrap";
 import { SettingSlider } from "./SettingsComponent";
-import socket from "../../socket";
+import socket, {connectSocket} from "../../socket";
 import { useNavigate } from "react-router-dom";
+import type { AuthService } from "../../auth/AuthService";
 
 export default function MainMenuComponent({
+    authService,
     setToastMessage
 }: { 
+    authService: AuthService,
     setToastMessage: (toast: { type: string; text: string; }) => void;
 }) {
     const navigate = useNavigate();
-    
+    const [connecting, setConnecting] = useState(true);
     const [joinRoomId, setJoinRoomId] = useState("");
     const [joinPlayerName, setJoinPlayerName] = useState("");
     const [playerSize, setPlayerSize] = useState(2);
 
     useEffect(() => {
-        if (!socket.connected) {
-            socket.connect();
+        const socketConnection = async () => {
+            if (!socket.connected) {
+                setConnecting(!await connectSocket(authService));
+            } else {
+                setConnecting(false);
+            }
         }
+        socketConnection();
     }, []);
+
+    useEffect(() => {
+        const loadPlayerName = async () => {
+            if (!connecting) {
+                const userProfile = await authService.getUserProfile();
+                if (!userProfile) return;
+                setJoinPlayerName(userProfile.displayName);
+            }
+        }
+        loadPlayerName();
+    }, [connecting])
 
     function handleCreateRoom() {
         if (!joinPlayerName.match(/^[a-zA-Z0-9_]{3,10}$/)) {
@@ -55,6 +74,8 @@ export default function MainMenuComponent({
             }
         });
     }
+
+
 
     return (
         <Container fluid className="py-4 min-vh-100 d-flex flex-column align-items-center justify-content-center" style={{ backgroundColor: "#1e1e2f" }}>
