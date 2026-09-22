@@ -45,10 +45,17 @@ export default function SettingComponent({isAdmin, setSetting, setToastMessage}:
                             setToastMessage({ type: 'error', text: 'Spielername ungültig! (3-10 Zeichen, A-Z, 0-9, _)' });
                             return;
                         }
-                        socket.emit("update_player_name", playerName, (msg?: string) => {
-                            if (msg) setToastMessage({text: msg, type: "warning"})
+                        socket.emit("update_player_name", playerName, (isRateLimited: boolean, msg?: string) => {
+                            if (isRateLimited) {
+                                setToastMessage({text: "Du hast zuviele anfragen gesendet! Versuch es später erneut!", type: "error"});
+                                return;
+                            }
+                            if (msg) {
+                                setToastMessage({text: msg, type: "warning"});
+                                return;
+                            }
+                            setPlayerName("");
                         });
-                        setPlayerName("");
                     }} 
                     className="d-flex flex-column gap-3 mt-3"
                 >
@@ -76,7 +83,11 @@ export default function SettingComponent({isAdmin, setSetting, setToastMessage}:
                         max={3}
                         value={difficulty}
                         onChange={(val) => {
-                            socket.emit("update_difficulty", val, (setting: RoomSetting) => {
+                            socket.emit("update_difficulty", val, (setting: RoomSetting, isRateLimited: boolean) => {
+                                if (isRateLimited) {
+                                    setToastMessage({text: "Du hast zuviele anfragen gesendet! Versuch es später erneut!", type: "error"});
+                                    return;
+                                }
                                 setSetting(setting);
                                 setDifficulty(val);
                             })
@@ -102,7 +113,11 @@ export default function SettingComponent({isAdmin, setSetting, setToastMessage}:
                                     time = 900_000
                                     break;
                             }
-                            socket.emit("update_game_time", time, (setting: RoomSetting) => {
+                            socket.emit("update_game_time", time, (setting: RoomSetting, isRateLimited: boolean) => {
+                                if (isRateLimited) {
+                                    setToastMessage({text: "Du hast zuviele anfragen gesendet! Versuch es später erneut!", type: "error"});
+                                    return;
+                                }
                                 setSetting(setting);
                                 setGameTime(val);
                             })
@@ -117,7 +132,11 @@ export default function SettingComponent({isAdmin, setSetting, setToastMessage}:
                         value={isLargeField}
                         onChange={(val) => {
                             setIsLargeField(val);
-                            socket.emit("update_field_size", val, (setting: RoomSetting) => {
+                            socket.emit("update_field_size", val, (setting: RoomSetting, isRateLimited: boolean) => {
+                                if (isRateLimited) {
+                                    setToastMessage({text: "Du hast zuviele anfragen gesendet! Versuch es später erneut!", type: "error"});
+                                    return;
+                                }
                                 setSetting(setting);
                                 setIsLargeField(val);
                             })

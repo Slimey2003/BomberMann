@@ -7,7 +7,8 @@ import socket from "../../socket";
 
 
 
-export default function GameComponent({gameState}: {gameState: GameStateDto}) {
+export default function GameComponent({userProfile, gameState}: 
+    { userProfile: {id: string, displayName: string} | null , gameState: GameStateDto}) {
 
     useEffect(() => {
         const pressedKeys = new Set<string>();
@@ -68,7 +69,7 @@ export default function GameComponent({gameState}: {gameState: GameStateDto}) {
                 return 520;
         }
     }, [wallSize]);
-    const myPlayer = gameState.players.find(p => p.id === (socket.auth as { sessionId: string })?.sessionId.split("-")[4]);
+    const myPlayer = gameState.players.find(p => p.id === userProfile?.id);
 
     return (
         <>
