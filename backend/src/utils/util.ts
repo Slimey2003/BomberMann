@@ -6,3 +6,5 @@ export type Room = {
     players: { [key: string]: string };
     setting: RoomSetting;
 }
+
+export type PlayerInput = string;

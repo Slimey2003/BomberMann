@@ -13,11 +13,11 @@ export default class RoomManager {
         this.gameController = gameController;
     }
 
-    public getRoom(roomId: string): Room | undefined {
-        return this.rooms[roomId];
+    public async getRoom(roomId: string): Promise<Room | null> {
+        return await this.redisService.getRoom(roomId);
     }
 
-    public createRoom(hostId: string, playerName: string, roomSize: number): Room {
+    public async createRoom(hostId: string, playerName: string, roomSize: number): Promise<Room> {
         const roomID = Math.random().toString(36).substring(2, 9);
         const roomSetting: RoomSetting = {
             roomSize: roomSize,
@@ -33,52 +33,54 @@ export default class RoomManager {
             setting: roomSetting,
         };
         
-        room.players[hostId] = playerName;
-        this.rooms[room.id] = room;
-        
+        await this.redisService.createRoom(room);
         return room;
     }
 
-    public deleteRoom(roomId: string) {
-        delete this.rooms[roomId];
+    public async deleteRoom(roomId: string) {
+        await this.redisService.deleteRoom(roomId);
     }
 
-    public updatePlayerName(roomId: string, playerId: string, name: string): void {
-        const room: Room | undefined = this.getRoom(roomId);
-        if (!room) return;
-        room.players[playerId] = name;
+    public async updatePlayerName(roomId: string, playerId: string, name: string) {
+        const isExistRoom: boolean = await this.redisService.roomExists(roomId);
+        if (!isExistRoom) return;
+        await this.redisService.addPlayerToRoom(roomId, playerId);
     }
 
-    public updateDifficulty(roomId: string, diff: number): Room | undefined {
-        const room: Room | undefined = this.getRoom(roomId);
-        if (!room) return undefined;
+    public async updateDifficulty(roomId: string, diff: number): Promise<Room | null> {
+        const room: Room | null = await this.getRoom(roomId);
+        if (!room) return null;
         room.setting.difficulty = diff;
+        await this.redisService.updateRoomSettings(roomId, room.setting);
         return room;
     }
 
-    public updateCanvasSize(roomId: string, size: number): Room | undefined {
-        const room: Room | undefined = this.getRoom(roomId);
-        if (!room) return undefined;
+    public async updateCanvasSize(roomId: string, size: number): Promise<Room | null> {
+        const room: Room | null = await this.getRoom(roomId);
+        if (!room) return null;
         room.setting.canvasSize = size;
+        await this.redisService.updateRoomSettings(roomId, room.setting);
         return room;
     }
     
-    public updateGameTime(roomId: string, time: number): Room | undefined {
-        const room: Room | undefined = this.getRoom(roomId);
-        if (!room) return undefined;
+    public async updateGameTime(roomId: string, time: number): Promise<Room | null> {
+        const room: Room | null = await this.getRoom(roomId);
+        if (!room) return null;
         room.setting.gameTime = time;
+        await this.redisService.updateRoomSettings(roomId, room.setting);
         return room;
     }
 
-    public getSetting(roomId: string): RoomSetting | undefined {
-        const room: Room | undefined = this.getRoom(roomId);
-        if (!room) return undefined;
+    public async getSetting(roomId: string): Promise<RoomSetting | null> {
+        const room: Room | null = await this.getRoom(roomId);
+        if (!room) return null;
         return room.setting;
     }
 
-    public addPlayer(roomId: string, playerId: string, name: string): { [key: string]: string } {
-        const room = this.getRoom(roomId);
+    public async addPlayer(roomId: string, playerId: string, name: string): Promise<{ [key: string]: string }> {
+        const players = await this.redisService.getPlayersInRoom(roomId);
         if (!room) return {};
+        
         room.players[playerId] = name;
         return room.players;
     }
@@ -87,6 +89,7 @@ export default class RoomManager {
         const room = this.getRoom(roomId);
         if (!room) return {};
         if (room.ownerId === playerId) {
+            this.redisService
             delete this.rooms[roomId];
             return {}
         }
@@ -101,8 +104,9 @@ export default class RoomManager {
         return room.players;
     }
 
-    public startGame(roomId: string): Game {
-        const room: Room;
+    public async startGame(roomId: string): Promise<Game | null> {
+        const room: Room | null = await this.redisService.getRoom(roomId);
+        if (!room) return null; 
         const game: Game = this.gameController.createGame(room);
         return game;
     }
