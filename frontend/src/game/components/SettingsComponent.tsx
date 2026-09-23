@@ -2,6 +2,7 @@ import type { RoomSetting } from "@project/utils";
 import { useState } from "react";
 import { Button, Form } from "react-bootstrap";
 import socket from "../../socket";
+import MESSAGES, { REGEX } from "@project/utils/message";
 
 export function SettingSlider({ label, min, max, value, onChange, labels }: { label: string, min: number, max: number, value: number, onChange: (val: number) => void, labels: string[] }) {
     return (
@@ -41,13 +42,13 @@ export default function SettingComponent({isAdmin, setSetting, setToastMessage}:
                 <Form
                     onSubmit={(e) => {
                         e.preventDefault();
-                        if (!playerName.match(/^[a-zA-Z0-9_]{3,10}$/)) {
-                            setToastMessage({ type: 'error', text: 'Spielername ungültig! (3-10 Zeichen, A-Z, 0-9, _)' });
+                        if (!playerName.match(REGEX.PLAYER_NAME)) {
+                            setToastMessage({ type: 'error', text: MESSAGES.ROOM_PLAYER_NAME_INVALID });
                             return;
                         }
                         socket.emit("update_player_name", playerName, (isRateLimited: boolean, msg?: string) => {
                             if (isRateLimited) {
-                                setToastMessage({text: "Du hast zuviele anfragen gesendet! Versuch es später erneut!", type: "error"});
+                                setToastMessage({text: MESSAGES.RATE_LIMIT_MESSAGE, type: "error"});
                                 return;
                             }
                             if (msg) {
@@ -85,7 +86,7 @@ export default function SettingComponent({isAdmin, setSetting, setToastMessage}:
                         onChange={(val) => {
                             socket.emit("update_difficulty", val, (setting: RoomSetting, isRateLimited: boolean) => {
                                 if (isRateLimited) {
-                                    setToastMessage({text: "Du hast zuviele anfragen gesendet! Versuch es später erneut!", type: "error"});
+                                    setToastMessage({text: MESSAGES.RATE_LIMIT_MESSAGE, type: "error"});
                                     return;
                                 }
                                 setSetting(setting);
@@ -115,7 +116,7 @@ export default function SettingComponent({isAdmin, setSetting, setToastMessage}:
                             }
                             socket.emit("update_game_time", time, (setting: RoomSetting, isRateLimited: boolean) => {
                                 if (isRateLimited) {
-                                    setToastMessage({text: "Du hast zuviele anfragen gesendet! Versuch es später erneut!", type: "error"});
+                                    setToastMessage({text: MESSAGES.RATE_LIMIT_MESSAGE, type: "error"});
                                     return;
                                 }
                                 setSetting(setting);
@@ -134,7 +135,7 @@ export default function SettingComponent({isAdmin, setSetting, setToastMessage}:
                             setIsLargeField(val);
                             socket.emit("update_field_size", val, (setting: RoomSetting, isRateLimited: boolean) => {
                                 if (isRateLimited) {
-                                    setToastMessage({text: "Du hast zuviele anfragen gesendet! Versuch es später erneut!", type: "error"});
+                                    setToastMessage({text: MESSAGES.RATE_LIMIT_MESSAGE, type: "error"});
                                     return;
                                 }
                                 setSetting(setting);
