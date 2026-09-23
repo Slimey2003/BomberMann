@@ -1,6 +1,6 @@
 import { Server, Socket } from "socket.io";
 import type { GameStateDto, RoomSetting } from "@project/utils";
-import GameManager from "../bomberman/GameManager";
+import RoomManager from "../bomberman/RoomManager";
 import http from "http";
 import type { Room } from "../utils/util";
 import type KeycloakAuth from "../auth/KeycloakAuth";
@@ -56,14 +56,14 @@ type GameSocket = Socket<ClientToServerEvents, ServerToClientEvents, InterServer
 
 export default class SocketServer {
     private io: Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>;
-    private gameManager: GameManager;
+    private roomManager: RoomManager;
     private disconnectTimeouts: Map<string, NodeJS.Timeout>;
     private authService: KeycloakAuth;
     private rateLimiter: RateLimiter;
 
-    constructor(server: http.Server, authService: KeycloakAuth, gameManager: GameManager) {
+    constructor(server: http.Server, authService: KeycloakAuth, roomManager: RoomManager) {
         this.authService = authService;
-        this.gameManager = gameManager;
+        this.roomManager = roomManager;
         this.rateLimiter = new RateLimiter(10_000, 10, 60_000); //innerhalb von 10 Sek maximal 10 Anfragen, alle 60 Sek wird auf geräumt. 
         this.disconnectTimeouts = new Map();
         const origins = process.env.FRONTEND_URL 
@@ -130,7 +130,7 @@ export default class SocketServer {
                 callback(false, false);
                 return;
             }
-            const room: Room | undefined = this.gameManager.getRoom(roomId);
+            const room: Room | undefined = this.roomManager.getRoom(roomId);
             callback(room != undefined, false);
         });
         

@@ -1,4 +1,4 @@
-import GameManager from "./bomberman/GameManager";
+import GameManager from "./bomberman/GameController";
 import { ExpressServer } from "./server/expressServer";
 import SocketServer from "./server/socketServer";
 import KeycloakService from "./service/KeycloakService";

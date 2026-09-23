@@ -1,9 +1,17 @@
 import type { Canvas, GameSetting, RoomSetting } from "@project/utils";
-import Game from "../bomberman/objects/Game";
+import Game from "./objects/Game";
 import type { Room } from "../utils/util";
+import type RedisService from "../service/RedisService";
+import type GameController from "./GameController";
 
-export default class GameManager {
-    private rooms: { [key: string]: Room } = {};
+export default class RoomManager {
+    private redisService: RedisService;
+    private gameController: GameController;
+
+    constructor(redisService: RedisService, gameController: GameController) {
+        this.redisService = redisService;
+        this.gameController = gameController;
+    }
 
     public getRoom(roomId: string): Room | undefined {
         return this.rooms[roomId];
@@ -93,85 +101,14 @@ export default class GameManager {
         return room.players;
     }
 
-    public createGame(room: Room): Game {
-        const settings: GameSetting = this.generateGameSetting(room.setting);
-        
-        const playerData: { id: string, name: string }[] = [];
-        for (const playerId in room.players) {
-            playerData.push({ id: playerId, name: room.players[playerId] });
-        }
-        
-        return new Game(room.id, playerData, settings);
-    }
-
     public startGame(roomId: string): Game {
-        const game: Game = this.createGame(this.rooms[roomId]);
-        this.rooms[roomId].activeGame = game;
-        setTimeout(() => game.gameStart(), 1000);
+        const room: Room;
+        const game: Game = this.gameController.createGame(room);
         return game;
     }
 
     public deleteGame(roomId: string): void {
-        const room: Room | undefined = this.getRoom(roomId);
-        if (!room) return;
-        this.rooms[roomId].activeGame = undefined;
+        this.gameController.deleteGame(roomId);
     }
 
-    private generateGameSetting(roomSettings: RoomSetting): GameSetting {
-        switch (roomSettings.difficulty) {
-            case 1:
-                return {
-                    gameTime: roomSettings.gameTime,
-                    blockProbability: 0.85,
-                    playerMaxLive: 6,
-                    canvas: this.generateCanvas(roomSettings.canvasSize),
-                };
-            case 3:
-                return {
-                    gameTime: roomSettings.gameTime,
-                    blockProbability: 0.4,
-                    playerMaxLive: 1,
-                    canvas: this.generateCanvas(roomSettings.canvasSize),
-                };
-            default:
-                return {
-                    gameTime: roomSettings.gameTime,
-                    blockProbability: 0.7,
-                    playerMaxLive: 3,
-                    canvas: this.generateCanvas(roomSettings.canvasSize),
-                };
-        }
-    }
-
-    private generateCanvas(canvasSize: number): Canvas {
-        switch (canvasSize) {
-            case 1:
-                return {
-                    height: 520,
-                    width: 520,
-                    playerSize: 30,
-                    wallSize: 30, 
-                    bombSize: 20,
-                    effectSize: 27.5 
-                };
-            case 2:
-                return {
-                    height: 525,
-                    width: 525,
-                    playerSize: 15,
-                    wallSize: 15,
-                    bombSize: 10,
-                    effectSize: 12.5 
-                };
-            default:
-                return {
-                    height: 520,
-                    width: 520,
-                    playerSize: 40,
-                    wallSize: 40, 
-                    bombSize: 30,
-                    effectSize: 35 
-                };
-        }
-    }
 }
