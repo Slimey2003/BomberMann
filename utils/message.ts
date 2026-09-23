@@ -14,5 +14,6 @@ const MESSAGES = {
 export const REGEX = {
     ROOM_ID: "^[a-z0-9_]{7,7}$",
     PLAYER_NAME: "^[a-zA-Z0-9_]{3,10}$",
-    REGISTER_PASSWORD: "/^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&+=])(?=\S+$).{8,20
+    REGISTER_PASSWORD: "/^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&+=])(?=\S+$).{8,20}$/",
+}
 export default MESSAGES;
