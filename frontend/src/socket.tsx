@@ -1,7 +1,7 @@
 import { io } from "socket.io-client";
 import { AuthService } from "./auth/AuthService";
 
-const socket = io(`http://localhost:${import.meta.env.VITE_GAME_PORT ?? 3001}`, {
+const socket = io(`http://localhost}`, {
     autoConnect: false,
     reconnection: true,
     reconnectionAttempts: 5,

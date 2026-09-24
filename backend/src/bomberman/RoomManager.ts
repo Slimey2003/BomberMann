@@ -2,15 +2,15 @@ import type { GameStateDto, RoomSetting } from "@project/utils";
 import Game from "./objects/Game";
 import type { PlayerInput, Room } from "../utils/util";
 import type RedisService from "../service/RedisService";
-import type GameController from "./GameController";
+import GameController from "./GameController";
 
 export default class RoomManager {
     private redisService: RedisService;
     private gameController: GameController;
 
-    constructor(redisService: RedisService, gameController: GameController) {
+    constructor(redisService: RedisService) {
         this.redisService = redisService;
-        this.gameController = gameController;
+        this.gameController = new GameController();
     }
 
     public async getRoom(roomId: string): Promise<Room | null> {

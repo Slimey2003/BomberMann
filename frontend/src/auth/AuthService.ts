@@ -4,14 +4,12 @@ export class AuthService {
     private readonly baseUrl: string;
     private clientId: string;
     private realm: string;
-    private backendPort: string;
 
     constructor(baseUrl: string) {
         this.baseUrl = baseUrl;
         this.testing = import.meta.env.VITE_IS_DEV;
         this.clientId = import.meta.env.VITE_KC_GAME_ID;
         this.realm = import.meta.env.VITE_KC_REALM;
-        this.backendPort = import.meta.env.VITE_GAME_PORT;
     }
 
     public async login(username: string, password: string): Promise<void> {
@@ -39,7 +37,7 @@ export class AuthService {
     }
 
     public async register(username: string, email: string, password: string): Promise<number> {
-        const response = await fetch(`${this.baseUrl}:${this.backendPort}/api/signup`, {
+        const response = await fetch(`${this.baseUrl}/api/signup`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
