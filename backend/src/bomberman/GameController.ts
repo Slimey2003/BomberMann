@@ -5,6 +5,11 @@ import Game from "./objects/Game";
 export default class GameController {
     private games: {[key: string]: Game} = {};
     
+
+    public getGame(roomID: string): Game | undefined {
+        return this.games[roomID];
+    }
+
     public createGame(room: Room): Game {
         const settings: GameSetting = this.generateGameSetting(room.setting);
         

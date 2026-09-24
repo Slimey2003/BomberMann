@@ -8,6 +8,7 @@ import type { JwtPayload } from "jsonwebtoken";
 import type { UUID } from "crypto";
 import RateLimiter from "../service/RateLimiter";
 import MESSAGES, {REGEX} from "@project/utils/message";
+import type Game from "../bomberman/objects/Game";
 
 interface ClientToServerEvents {
     state_room: (roomId: string, callback: (state: boolean, isRateLimited: boolean) => void) => void;
@@ -121,7 +122,7 @@ export default class SocketServer {
     }
 
     private handleConnection(socket: GameSocket): void {
-        socket.on("state_room", (roomId, callback) => {
+        socket.on("state_room", async (roomId, callback) => {
             if (this.isRateLimited(socket)) {
                 callback(false, true);
                 return;
@@ -130,23 +131,23 @@ export default class SocketServer {
                 callback(false, false);
                 return;
             }
-            const room: Room | undefined = this.roomManager.getRoom(roomId);
-            callback(room != undefined, false);
+            const room: Room | null = await this.roomManager.getRoom(roomId);
+            callback(room != null, false);
         });
         
-        socket.on("is_admin", (callback) => {
-            const room = this.isRoomAdmin(socket);
-            callback(room != undefined, room?.setting);
+        socket.on("is_admin", async (callback) => {
+            const room = await this.isRoomAdmin(socket);
+            callback(room != null, room?.setting);
         });
 
-        socket.on("reconnect_room", (roomId: string, callback) => {
+        socket.on("reconnect_room", async (roomId: string, callback) => {
             if (roomId === null) {
                 callback(false, [], false);
                 return;
             }
             if (this.isRateLimited(socket)) return;
-            const room: Room | undefined = this.gameManager.getRoom(roomId);
-            if (room === undefined || !room.players[this.getUserId(socket)]) {
+            const room: Room | null = await this.roomManager.getRoom(roomId);
+            if (room === null|| !room.players[this.getUserId(socket)]) {
                 socket.data.roomId = null;
                 callback(false, [], false);
                 return;
@@ -163,90 +164,87 @@ export default class SocketServer {
             callback(true, playerList, false);
         }) 
         
-        socket.on("create_room", (playerName: string, roomSize: number, callback) => {
+        socket.on("create_room", async (playerName: string, roomSize: number, callback) => {
             if (this.isRateLimited(socket)) {
                 callback("", true);
                 return;
             }
-            const roomInfo = this.gameManager.createRoom(this.getUserId(socket), playerName, roomSize);
+            const roomInfo = await this.roomManager.createRoom(this.getUserId(socket), playerName, roomSize);
             this.joinSocketToRoom(socket, roomInfo.id);
             callback(roomInfo.id, false);
         });
         
-        socket.on("close_room", () => {
-            const room = this.isRoomAdmin(socket);
-            if (room == undefined) {
+        socket.on("close_room", async () => {
+            const room = await this.isRoomAdmin(socket);
+            if (room == null) {
                 return;
             }
-            this.gameManager.deleteRoom(room.id);
+            await this.roomManager.deleteRoom(room.id);
             this.io.to(room.id).emit("closed_room"); 
         });
         
-        socket.on("start_game", () => {
-            const room = this.isRoomAdmin(socket);
-            if (room == undefined) {
+        socket.on("start_game", async () => {
+            const room = await this.isRoomAdmin(socket);
+            if (room == null) {
                 return;
             }
-            this.gameManager.startGame(room.id);
+            await this.roomManager.startGame(room.id);
         });
 
-        socket.on("delete_game", () => {
-            const room = this.isRoomAdmin(socket);
-            if (room == undefined) {
+        socket.on("delete_game", async () => {
+            const room = await this.isRoomAdmin(socket);
+            if (room == null) {
                 return;
             }
-            this.gameManager.deleteGame(room.id);
+            this.roomManager.deleteGame(room.id);
         });
 
-        socket.on("update_difficulty", (diff: number, callback) => {
+        socket.on("update_difficulty", async (diff: number, callback) => {
             if (this.isRateLimited(socket)) {
                 callback({gameTime: 0, difficulty: 0, canvasSize: 0, roomSize: 0}, true);
                 return;
             }
-            const room = this.isRoomAdmin(socket);
-            if (room == undefined) {
-                return;
-            }
-            this.gameManager.updateDifficulty(room.id, diff);
+            let room = await this.isRoomAdmin(socket);
+            if (room == null) return;
+            room = await this.roomManager.updateDifficulty(room.id, diff);
+            if (room == null) return;
             callback(room.setting, false);
         });
         
-        socket.on("update_game_time", (time: number, callback) => {
+        socket.on("update_game_time", async (time: number, callback) => {
             if (this.isRateLimited(socket)) {
                 callback({gameTime: 0, difficulty: 0, canvasSize: 0, roomSize: 0}, true);
                 return;
             }
-            const room = this.isRoomAdmin(socket);
-            if (room == undefined) {
-                return;
-            }
-            this.gameManager.updateGameTime(room.id, time)
+            let room = await this.isRoomAdmin(socket);
+            if (room == null) return;
+            room = await this.roomManager.updateGameTime(room.id, time)
+            if (room == null) return;
             callback(room.setting, false);
         });
         
-        socket.on("update_field_size", (size: number, callback) => {
+        socket.on("update_field_size", async (size: number, callback) => {
             if (this.isRateLimited(socket)) {
                 callback({gameTime: 0, difficulty: 0, canvasSize: 0, roomSize: 0}, true);
                 return;
             }
-            const room = this.isRoomAdmin(socket);
-            if (room == undefined) {
-                return;
-            }
-            this.gameManager.updateCanvasSize(room.id, size)
+            let room = await this.isRoomAdmin(socket);
+            if (room == null) return;
+            room = await this.roomManager.updateCanvasSize(room.id, size)
+            if (room == null) return;
             callback(room.setting, false);
         });
 
-        socket.on("join_room", (roomId: string, playerName: string, callback) => {
+        socket.on("join_room", async (roomId: string, playerName: string, callback) => {
             if (this.isRateLimited(socket)) {
                 callback(false, true);
                 return;
             }
             if (!this.roomValidation(socket, roomId)) return;
             if (!this.nameValidation(socket, playerName)) return;
-            const room = this.gameManager.getRoom(roomId);
+            const room = await this.roomManager.getRoom(roomId);
             if (!room) {
-                callback(false, false, "Der Raum existiert nicht!");
+                callback(false, false, MESSAGES.ROOM_INVALID);
                 return;
             }
             const userId = this.getUserId(socket);
@@ -259,17 +257,17 @@ export default class SocketServer {
                 callback(false, false, "Der Name wurde bereits vergeben!");
                 return;
             }
-            const players = this.gameManager.addPlayer(roomId, userId, playerName);
+            const players = await this.roomManager.addPlayer(roomId, userId, playerName);
 
             this.joinSocketToRoom(socket, roomId);
             this.io.to(roomId).emit("room_players", this.getPlayerListAsArray(players));
             callback(true, false);
         });
         
-        socket.on("leave_room", () => {
+        socket.on("leave_room", async () => {
             const roomId = socket.data.roomId;
             if (!roomId) return;
-            const players = this.gameManager.removePlayer(roomId, this.getUserId(socket));
+            const players = await this.roomManager.removePlayer(roomId, this.getUserId(socket));
             socket.leave(roomId);
             socket.data.roomId = null;
             
@@ -281,15 +279,15 @@ export default class SocketServer {
             this.io.to(roomId).emit("room_players", playersList);
         });
         
-        socket.on("request_players", (callback) => {
+        socket.on("request_players", async (callback) => {
             const id = socket.data.roomId;
             if (!id) return;
-            const room = this.gameManager.getRoom(id);
-            if (room == undefined) return;
+            const room = await this.roomManager.getRoom(id);
+            if (room == null) return;
             callback(this.getPlayerListAsArray(room.players));
         });
         
-        socket.on("update_player_name", (playerName, callback) => {
+        socket.on("update_player_name", async (playerName, callback) => {
             if (this.isRateLimited(socket)) {
                 callback(true);
                 return;
@@ -298,49 +296,38 @@ export default class SocketServer {
             if (!roomId) return;
             if (!this.roomValidation(socket, roomId)) return;
             if (!this.nameValidation(socket, playerName)) return;
-            const room = this.gameManager.getRoom(roomId);
+            const room = await this.roomManager.getRoom(roomId);
             if (!room) {
-                callback(false, "Der Raum existiert nicht!");
+                callback(false, MESSAGES.ROOM_INVALID);
                 return;
             }
             const playersList = this.getPlayerListAsArray(room.players);
             if (playersList.find(name => name === playerName)) {
-                callback(false, "Der Name wurde bereits vergeben!");
+                callback(false, MESSAGES.ROOM_PLAYER_NAME_USED);
                 return;
             }
-            this.gameManager.updatePlayerName(roomId, this.getUserId(socket), playerName);
-            this.io.to(roomId).emit("room_players", this.getPlayerListAsArray(room.players));
+
+            const newList = await this.roomManager.updatePlayerName(roomId, this.getUserId(socket), playerName);
+            this.io.to(roomId).emit("room_players", this.getPlayerListAsArray(newList));
             callback(false);
         });
 
-        socket.on("player_input_action", (input: string) => {
+        socket.on("player_input_action", async (input: string) => {
             const roomId = socket.data.roomId;
             if (!roomId) return;
-
-            const room = this.gameManager.getRoom(roomId);
-            if (!room || !room.activeGame || !room.activeGame.isRunning()) return;
-            const playerController = room.activeGame.getPlayerController();
-            playerController.addInputPlayerKey(this.getUserId(socket), input);
+            this.roomManager.addInputPlayer(roomId, this.getUserId(socket), input);
         });
 
         socket.on("player_release_action", (input: string) => {
             const roomId = socket.data.roomId;
             if (!roomId) return;
-
-            const room = this.gameManager.getRoom(roomId);
-            if (!room || !room.activeGame || !room.activeGame.isRunning()) return;
-            const playerController = room.activeGame.getPlayerController();
-            playerController.releaseInputPlayerKey(this.getUserId(socket), input);
+            this.roomManager.releaseInputPlayer(roomId, this.getUserId(socket), input);
         });
         
         socket.on("player_clear_action", () => {
             const roomId = socket.data.roomId;
             if (!roomId) return;
-
-            const room = this.gameManager.getRoom(roomId);
-            if (!room || !room.activeGame || !room.activeGame.isRunning()) return;
-            const playerController = room.activeGame.getPlayerController();
-            playerController.clearPlayerKeys(this.getUserId(socket));
+            this.roomManager.clearInputPlayer(roomId, this.getUserId(socket));
         });
         
         socket.on("disconnect", () => {
@@ -356,12 +343,12 @@ export default class SocketServer {
         return socket.data.userId ?? "";
     }
 
-    private isRoomAdmin(socket: GameSocket): Room | undefined {
+    private async isRoomAdmin(socket: GameSocket): Promise<Room | null> {
         const roomId: string | null = socket.data.roomId;
-        if (!roomId) return undefined;
-        const room: Room | undefined = this.gameManager.getRoom(roomId);
-        if (room == undefined || room.ownerId != this.getUserId(socket)) {
-            return undefined;
+        if (!roomId) return null;
+        const room: Room | null = await this.roomManager.getRoom(roomId);
+        if (room == null || room.ownerId != this.getUserId(socket)) {
+            return null;
         }
         return room;
     }
@@ -397,8 +384,8 @@ export default class SocketServer {
         
         if (!roomId || !sessionId) return;
         
-        const timeout = setTimeout(() => {
-            const players = this.gameManager.removePlayer(roomId, socket.id);
+        const timeout = setTimeout(async () => {
+            const players = await this.roomManager.removePlayer(roomId, socket.id);
             const playerList = this.getPlayerListAsArray(players);
             if (playerList.length === 0) {
                 this.io.to(roomId).emit("closed_room");
@@ -412,16 +399,21 @@ export default class SocketServer {
     }
 
     private startBroadcastLoop(): void {
-        setInterval(() => {
+        setInterval(async () => {
             const activeSocketRooms = this.io.sockets.adapter.rooms;
-            
             for (const [roomId, _] of activeSocketRooms) {
-                const room = this.gameManager.getRoom(roomId);
-                if (room && room.activeGame) {
-                    const state: GameStateDto = room.activeGame.render();
-                    this.io.to(roomId).emit("game_tick", state);
+                const game: Game | undefined = this.roomManager.getGame(roomId);
+                if (game) {
+                    const state: GameStateDto = game.render();
+                    this.roomManager.publishGameState(roomId, state);
                 }
             }
         }, 50);
+
+        this.roomManager.subscribeToRoomCreated(async (room: Room) => {
+            this.roomManager.subscribeToGameState(room, (state) => {
+                this.io.to(room.id).emit("game_tick", state);
+            });
+        });
     }
 }

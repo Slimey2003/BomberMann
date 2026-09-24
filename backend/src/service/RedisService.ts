@@ -21,12 +21,12 @@ export default class RedisService {
          await this.subClient.quit();
     }
 
-    public async createRoom(room: Room) {
+    public async createRoom(room: Room, hostId: string, playerName: string) {
         await this.pubClient.hSet(`room:${room.id}`, {
             ownerId: room.ownerId,
             setting: JSON.stringify(room.setting),
         });
-        await this.pubClient.sAdd(`room:${room.id}:players`, room.ownerId); //User Name Fehlt.....
+        await this.pubClient.hSet(`room:${room.id}:players`, {[hostId]: playerName});
     }
 
     public async roomExists(roomId: string): Promise<boolean> {
@@ -34,10 +34,17 @@ export default class RedisService {
     }
 
     public async getRoom(roomId: string): Promise<Room | null> {
-        if (await this.roomExists(roomId)) return null;
-        const roomData = await this.pubClient.get(`room:${roomId}`);
-        if (!roomData) return null;
-        return JSON.parse(roomData);
+        if (!(await this.roomExists(roomId))) return null;
+        const hashData = await this.pubClient.hGetAll(`room:${roomId}`);
+        if (!hashData || !hashData.ownerId) return null;
+        const players = await this.pubClient.hGetAll(`room:${roomId}:players`);
+
+        return {
+            id: roomId,
+            ownerId: hashData.ownerId,
+            setting: JSON.parse(hashData.setting),
+            players: players
+        };
     }
 
     public async getRoomSettings(roomId: string): Promise<RoomSetting | null> {
@@ -56,12 +63,12 @@ export default class RedisService {
         await this.pubClient.del([`room:${roomId}`, `room:${roomId}:players`]);
     }
 
-    public async addPlayerToRoom(roomId: string, playerId: string) {
+    public async addPlayerToRoom(roomId: string, playerId: string, name: string) {
         const roomExists = await this.pubClient.exists(`room:${roomId}`);
         if (!roomExists) {
             throw Error(`Der Raum:${roomId} existiert nicht`);
         }
-        await this.pubClient.sAdd(`room:${roomId}:players`, playerId);
+        await this.pubClient.hSet(`room:${roomId}:players`, {[playerId]: name });
     }
 
     public async removePlayerFromRoom(roomId: string, playerId: string) {
@@ -69,31 +76,72 @@ export default class RedisService {
         if (!roomExists) {
             throw Error(`Der Raum:${roomId} existiert nicht`);
         }
-        await this.pubClient.sRem(`room:${roomId}:players`, playerId);
+        await this.pubClient.hDel(`room:${roomId}:players`, playerId);
     }
 
-    public async getPlayersInRoom(roomId: string): Promise<string[]> {
-        return await this.pubClient.sMembers(`room:${roomId}:players`);
+    public async getPlayersInRoom(roomId: string): Promise<{[key: string]: string}> {
+        return await this.pubClient.hGetAll(`room:${roomId}:players`);
     }
 
-    public async publishPlayerInput(roomId: string, playerId: string, input: PlayerInput) {
-        const channel = `room:${roomId}:input`;
+    public async publishPlayerInputAdd(roomId: string, playerId: string, input: PlayerInput) {
+        const channel = `room:${roomId}:input:add`;
         await this.pubClient.publish(channel, JSON.stringify({
             id: playerId,
             input: input
         }));
     }
 
-    public async subscribeToInputs(roomId: string, onInputReceived: (playerId: string, input: PlayerInput) => void): Promise<void> {
-        const channel = `room:${roomId}:input`;
+    public async publishPlayerInputRelease(roomId: string, playerId: string, input: PlayerInput) {
+        const channel = `room:${roomId}:input:release`;
+        await this.pubClient.publish(channel, JSON.stringify({
+            id: playerId,
+            input: input
+        }));
+    }
+
+    public async publishPlayerInputClear(roomId: string, playerId: string) {
+        const channel = `room:${roomId}:input:clear`;
+        await this.pubClient.publish(channel, JSON.stringify({
+            id: playerId
+        }));
+    }
+
+    public async subscribeToInputsAdd(roomId: string, onInputReceived: (playerId: string, input: PlayerInput) => void): Promise<void> {
+        const channel = `room:${roomId}:input:add`;
         await this.subClient.subscribe(channel, (m, _c) => {
             const inputData = JSON.parse(m);
             onInputReceived(inputData.id, inputData.input);
         });
     }
 
-    public async unsubscribeFromInputs(roomId: string): Promise<void> {
-        const channel = `room:${roomId}:input`;
+    public async unsubscribeFromInputsAdd(roomId: string): Promise<void> {
+        const channel = `room:${roomId}:input:add`;
+        await this.subClient.unsubscribe(channel);
+    }
+
+    public async subscribeToInputsRelease(roomId: string, onInputReceived: (playerId: string, input: PlayerInput) => void): Promise<void> {
+        const channel = `room:${roomId}:input:release`;
+        await this.subClient.subscribe(channel, (m, _c) => {
+            const inputData = JSON.parse(m);
+            onInputReceived(inputData.id, inputData.input);
+        });
+    }
+
+    public async unsubscribeFromInputsRelease(roomId: string): Promise<void> {
+        const channel = `room:${roomId}:input:release`;
+        await this.subClient.unsubscribe(channel);
+    }
+
+    public async subscribeToInputsClear(roomId: string, onInputReceived: (playerId: string) => void): Promise<void> {
+        const channel = `room:${roomId}:input:clear`;
+        await this.subClient.subscribe(channel, (m, _c) => {
+            const inputData = JSON.parse(m);
+            onInputReceived(inputData.id);
+        });
+    }
+
+    public async unsubscribeFromInputsClear(roomId: string): Promise<void> {
+        const channel = `room:${roomId}:input:clear`;
         await this.subClient.unsubscribe(channel);
     }
 
@@ -113,5 +161,17 @@ export default class RedisService {
     public async unsubscribeFromGameState(roomId: string): Promise<void> {
         const channel = `room:${roomId}:state`;
         await this.subClient.unsubscribe(channel);
+    }
+
+    public async publishRoomCreated(room: Room): Promise<void> {
+        const channel = "lobby:room-created";
+        await this.pubClient.publish(channel, JSON.stringify(room));
+    }
+
+    public async subscribeToRoomCreated(onRoomCreated: (room: Room) => void): Promise<void> {
+        const channel = "lobby:room-created";
+        await this.subClient.subscribe(channel, (m, _c) => {
+            onRoomCreated(JSON.parse(m));
+        });
     }
 }
