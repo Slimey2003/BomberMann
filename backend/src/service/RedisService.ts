@@ -162,16 +162,4 @@ export default class RedisService {
         const channel = `room:${roomId}:state`;
         await this.subClient.unsubscribe(channel);
     }
-
-    public async publishRoomCreated(room: Room): Promise<void> {
-        const channel = "lobby:room-created";
-        await this.pubClient.publish(channel, JSON.stringify(room));
-    }
-
-    public async subscribeToRoomCreated(onRoomCreated: (room: Room) => void): Promise<void> {
-        const channel = "lobby:room-created";
-        await this.subClient.subscribe(channel, (m, _c) => {
-            onRoomCreated(JSON.parse(m));
-        });
-    }
 }

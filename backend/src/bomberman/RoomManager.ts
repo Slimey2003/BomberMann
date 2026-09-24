@@ -42,15 +42,14 @@ export default class RoomManager {
         };
         
         await this.redisService.createRoom(room, hostId, playerName);
-        await this.redisService.publishRoomCreated(room);
         return room;
     }
 
     public async deleteRoom(roomId: string) {
         await this.redisService.deleteRoom(roomId);
-        this.redisService.unsubscribeFromInputsAdd(roomId);
-        this.redisService.unsubscribeFromInputsRelease(roomId);
-        this.redisService.unsubscribeFromInputsClear(roomId);
+        await this.redisService.unsubscribeFromInputsAdd(roomId);
+        await this.redisService.unsubscribeFromInputsRelease(roomId);
+        await this.redisService.unsubscribeFromInputsClear(roomId);
         await this.redisService.unsubscribeFromGameState(roomId);
     }
 
@@ -103,7 +102,7 @@ export default class RoomManager {
         const room: Room | null = await this.getRoom(roomId);
         if (!room) return {};
         if (room.ownerId === playerId) {
-            await this.redisService.deleteRoom(roomId);
+            await this.deleteRoom(roomId);
             return {}
         }
         await this.redisService.removePlayerFromRoom(roomId, playerId);
@@ -172,7 +171,7 @@ export default class RoomManager {
         return game;
     }
 
-    public deleteGame(roomId: string): void {
+    public async deleteGame(roomId: string){
         this.gameController.deleteGame(roomId);
         this.redisService.unsubscribeFromInputsAdd(roomId);
         this.redisService.unsubscribeFromInputsRelease(roomId);
@@ -181,11 +180,12 @@ export default class RoomManager {
         this.redisService.unsubscribeFromGameState(roomId);
     }
 
-    public async subscribeToRoomCreated(onRoomCreated: (room: Room) => void): Promise<void> {
-        this.redisService.subscribeToRoomCreated(onRoomCreated);
+    public subscribeToGameState(roomId: string, onStateReceived: (gameState: GameStateDto) => void) {
+        this.redisService.subscribeToGameState(roomId, onStateReceived);
     }
 
-    public subscribeToGameState(room: Room, onStateReceived: (gameState: GameStateDto) => void) {
-        this.redisService.subscribeToGameState(room.id, onStateReceived);
+
+    unsubscribeFromGameState(roomId: string) {
+        this.redisService.unsubscribeFromGameState(roomId);
     }
 }

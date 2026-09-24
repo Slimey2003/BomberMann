@@ -155,7 +155,8 @@ export default class SocketServer {
 
             socket.data.roomId = roomId;
             socket.join(roomId);
-
+            const timeoutId = this.disconnectTimeouts.get(this.getUserId(socket));
+            clearTimeout(timeoutId);
             const playerList = this.getPlayerListAsArray(room.players);
             if (room.ownerId === this.getUserId(socket)) {
                 callback(true, playerList, true, room.setting);
@@ -260,6 +261,7 @@ export default class SocketServer {
             const players = await this.roomManager.addPlayer(roomId, userId, playerName);
 
             this.joinSocketToRoom(socket, roomId);
+            this.subscribeToGameStateIfNeeded(roomId);
             this.io.to(roomId).emit("room_players", this.getPlayerListAsArray(players));
             callback(true, false);
         });
@@ -276,6 +278,7 @@ export default class SocketServer {
                 this.io.to(roomId).emit("closed_room");
                 return;
             }
+            this.unsubscribeFromGameStateIfNeeded(roomId);
             this.io.to(roomId).emit("room_players", playersList);
         });
         
@@ -315,19 +318,19 @@ export default class SocketServer {
         socket.on("player_input_action", async (input: string) => {
             const roomId = socket.data.roomId;
             if (!roomId) return;
-            this.roomManager.addInputPlayer(roomId, this.getUserId(socket), input);
+            await this.roomManager.addInputPlayer(roomId, this.getUserId(socket), input);
         });
 
-        socket.on("player_release_action", (input: string) => {
+        socket.on("player_release_action", async (input: string) => {
             const roomId = socket.data.roomId;
             if (!roomId) return;
-            this.roomManager.releaseInputPlayer(roomId, this.getUserId(socket), input);
+            await this.roomManager.releaseInputPlayer(roomId, this.getUserId(socket), input);
         });
         
-        socket.on("player_clear_action", () => {
+        socket.on("player_clear_action", async () => {
             const roomId = socket.data.roomId;
             if (!roomId) return;
-            this.roomManager.clearInputPlayer(roomId, this.getUserId(socket));
+            await this.roomManager.clearInputPlayer(roomId, this.getUserId(socket));
         });
         
         socket.on("disconnect", () => {
@@ -380,12 +383,13 @@ export default class SocketServer {
 
     private handleDisconnect(socket: GameSocket): void {
         const roomId = socket.data.roomId;
-        const sessionId = socket.data.userId;
+        const sessionId = this.getUserId(socket);
         
         if (!roomId || !sessionId) return;
-        
+        this.unsubscribeFromGameStateIfNeeded(roomId);
+
         const timeout = setTimeout(async () => {
-            const players = await this.roomManager.removePlayer(roomId, socket.id);
+            const players = await this.roomManager.removePlayer(roomId, sessionId);
             const playerList = this.getPlayerListAsArray(players);
             if (playerList.length === 0) {
                 this.io.to(roomId).emit("closed_room");
@@ -409,11 +413,24 @@ export default class SocketServer {
                 }
             }
         }, 50);
-
-        this.roomManager.subscribeToRoomCreated(async (room: Room) => {
-            this.roomManager.subscribeToGameState(room, (state) => {
-                this.io.to(room.id).emit("game_tick", state);
-            });
-        });
     }
+
+    private subscribeToGameStateIfNeeded(roomId: string) {
+        const localSocketsInRoom = this.io.sockets.adapter.rooms.get(roomId)?.size || 0;
+
+        if (localSocketsInRoom === 1) {
+            this.roomManager.subscribeToGameState(roomId, (state) => {
+                this.io.to(roomId).emit("game_tick", state);
+            });
+        }
+    }
+
+    private unsubscribeFromGameStateIfNeeded(roomId: string) {
+        const localSocketsInRoom = this.io.sockets.adapter.rooms.get(roomId)?.size || 0;
+
+        if (localSocketsInRoom === 0) {
+            this.roomManager.unsubscribeFromGameState(roomId);
+        }
+    }
+
 }
