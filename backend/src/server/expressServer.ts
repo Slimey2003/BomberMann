@@ -56,6 +56,6 @@ export class ExpressServer {
     }
 
     public start(): void {
-        this.server.listen();
+        this.server.listen(3000, "0.0.0.0");
     }
 }
