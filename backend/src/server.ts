@@ -4,10 +4,12 @@ import SocketServer from "./server/socketServer";
 import KeycloakService from "./service/KeycloakService";
 import RedisService from "./service/RedisService";
 
+const port: number = parseInt(process.env.GAME_PORT ?? "3000", 10);
+
 const redisService = new RedisService();
 const gameManager = new RoomManager(redisService);
 const keycloakService = new KeycloakService("http://keycloak:8080", "bombermann", process.env.KC_BOOTSTRAP_ADMIN_USERNAME ?? "", process.env.KC_BOOTSTRAP_ADMIN_PASSWORD ?? ""); 
-const expressServer = new ExpressServer(keycloakService);
+const expressServer = new ExpressServer(port, keycloakService);
 expressServer.start();
 const socketServer = new SocketServer(expressServer.getServer(), keycloakService.getAuth(), gameManager);
 socketServer.start();

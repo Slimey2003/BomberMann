@@ -10,11 +10,13 @@ export class ExpressServer {
     private app: express.Express;
     private apiLimiter: express.RequestHandler;
     private server: http.Server;
+    private port: number;
     private keyService: KeycloakService;
 
-    constructor(keyService: KeycloakService) {
+    constructor(port: number, keyService: KeycloakService) {
         this.keyService = keyService;
         this.app = express();
+        this.port = port;
         this.app.set('trust proxy', 1);
         this.server = http.createServer(this.app);
         this.apiLimiter = rateLimit({
@@ -58,6 +60,6 @@ export class ExpressServer {
     }
 
     public start(): void {
-        this.server.listen(3000, "0.0.0.0");
+        this.server.listen(this.port, "0.0.0.0");
     }
 }

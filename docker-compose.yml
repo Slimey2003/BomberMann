@@ -31,14 +31,15 @@ services:
     ports:
       - "6379:6379"
     restart: always
-  nginx:
-    image: nginx:alpine
-    ports:
-      - "80:80"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - app
+  #nginx:
+  #  image: nginx:alpine
+  #  ports:
+  #    - "80:80"
+  #  volumes:
+  #    - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #  depends_on:
+  #    - app
+  #    - app2
   keycloak:
     image: quay.io/keycloak/keycloak:latest
     command: start-dev --import-realm
@@ -62,20 +63,22 @@ services:
       args:
         VITE_KC_GAME_ID: ${KC_GAME_ID}
         VITE_KC_REALM: ${KC_REALM}
+        VITE_GAME_PORT: ${GAME_PORT_INSTANCE_ONE}
         VITE_IS_DEV: ${IS_DEV}
     volumes:
       - ./backend:/app/backend
       - ./utils:/app/utils
       - /app/node_modules
       - /app/backend/public
+    ports:
+      - "${GAME_PORT_INSTANCE_ONE}:${GAME_PORT_INSTANCE_ONE}"
     depends_on:
       - database
       - redis
       - keycloak
-    deploy:
-      replicas: 2
     environment:
-      FRONTEND_URL: "http://localhost"
+      FRONTEND_URL: "http://localhost:${GAME_PORT_INSTANCE_ONE}"
+      GAME_PORT: ${GAME_PORT_INSTANCE_ONE}
       DB_HOST: database
       DB_PORT: 5432
       DB_USER: ${POSTGRES_GAME_USER}
@@ -83,6 +86,41 @@ services:
       DB_NAME: ${POSTGRES_GAME_DB}
       VITE_KC_GAME_ID: ${KC_GAME_ID}
       VITE_KC_REALM: ${KC_REALM}
+      VITE_GAME_PORT: ${GAME_PORT_INSTANCE_ONE}
+      VITE_IS_DEV: ${IS_DEV}
+
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD}
+  app2:
+    build: 
+      context: .
+      args:
+        VITE_KC_GAME_ID: ${KC_GAME_ID}
+        VITE_KC_REALM: ${KC_REALM}
+        VITE_GAME_PORT: ${GAME_PORT_INSTANCE_TWO}
+        VITE_IS_DEV: ${IS_DEV}
+    volumes:
+      - ./backend:/app/backend
+      - ./utils:/app/utils
+      - /app/node_modules
+      - /app/backend/public
+    ports:
+      - "${GAME_PORT_INSTANCE_TWO}:${GAME_PORT_INSTANCE_TWO}"
+    depends_on:
+      - database
+      - redis
+      - keycloak
+    environment:
+      FRONTEND_URL: "http://localhost:${GAME_PORT_INSTANCE_TWO}"
+      GAME_PORT: ${GAME_PORT_INSTANCE_TWO}
+      DB_HOST: database
+      DB_PORT: 5432
+      DB_USER: ${POSTGRES_GAME_USER}
+      DB_PASSWORD: ${POSTGRES_GAME_PASSWORD}
+      DB_NAME: ${POSTGRES_GAME_DB}
+      VITE_KC_GAME_ID: ${KC_GAME_ID}
+      VITE_KC_REALM: ${KC_REALM}
+      VITE_GAME_PORT: ${GAME_PORT_INSTANCE_TWO}
       VITE_IS_DEV: ${IS_DEV}
 
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME}

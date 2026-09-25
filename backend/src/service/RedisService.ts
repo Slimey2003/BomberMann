@@ -1,6 +1,6 @@
 import { createClient } from "redis";
 import type { PlayerInput, Room } from "../utils/util";
-import type { GameStateDto, RoomSetting } from "@project/utils";
+import type { RoomSetting } from "@project/utils";
 
 export default class RedisService {
     private pubClient: ReturnType<typeof createClient>;
