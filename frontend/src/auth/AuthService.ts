@@ -45,6 +45,14 @@ export class AuthService {
             body: JSON.stringify({ username, email, password })
         });
 
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => null);
+            throw {
+                status: response.status,
+                data: errorData
+            };
+        }
+
         return response.status;
     }
 

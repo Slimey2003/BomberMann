@@ -63,7 +63,6 @@ services:
         VITE_KC_GAME_ID: ${KC_GAME_ID}
         VITE_KC_REALM: ${KC_REALM}
         VITE_IS_DEV: ${IS_DEV}
-    container_name: bombermann-app
     volumes:
       - ./backend:/app/backend
       - ./utils:/app/utils
@@ -71,6 +70,10 @@ services:
       - /app/backend/public
     depends_on:
       - database
+      - redis
+      - keycloak
+    deploy:
+      replicas: 2
     environment:
       FRONTEND_URL: "http://localhost"
       DB_HOST: database

@@ -17,8 +17,10 @@ export default class GameController {
         for (const playerId in room.players) {
             playerData.push({ id: playerId, name: room.players[playerId] });
         }
+        const game: Game = new Game(room.id, playerData, settings);
+        this.games[room.id] = game;
         
-        return new Game(room.id, playerData, settings);
+        return game;
     }
 
     public startGame(room: Room): Game {

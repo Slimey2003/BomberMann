@@ -102,6 +102,7 @@ export default function RoomComponent({authService, setToastMessage}: {
 
         function gameTick(state: GameStateDto) {
             const parsedState = GameStateDtoSchema.parse(state);
+            console.log(parsedState);
             setGameState(parsedState);
             if (parsedState.type === "running") {
                 setLobby(false);

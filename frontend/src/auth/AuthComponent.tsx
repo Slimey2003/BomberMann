@@ -59,7 +59,14 @@ export default function AuthOverlay({ authService, setToastMessage, onSuccess }:
                     setToastMessage({text: MESSAGES.SERVER_ERROR_FALLBACK, type:"error"});
                 }
             } catch (err: any) {
-                setToastMessage({text: err.message, type: "error"});
+                if (err.status === 400 && err.data?.errors) {
+                    const errorMessages = Object.values(err.data.errors).flat().join(' | ');
+                    setToastMessage({text: errorMessages, type: "error"});
+                } else if (err.status === 429) {
+                    setToastMessage({text: MESSAGES.RATE_LIMIT_MESSAGE, type: "error"});
+                } else {
+                    setToastMessage({text: MESSAGES.SERVER_ERROR_FALLBACK, type: "error"});
+                }
             }
     };
 

@@ -15,12 +15,14 @@ export class ExpressServer {
     constructor(keyService: KeycloakService) {
         this.keyService = keyService;
         this.app = express();
+        this.app.set('trust proxy', 1);
         this.server = http.createServer(this.app);
         this.apiLimiter = rateLimit({
             windowMs: 15 * 60 * 1000, // 15 Min
             max: 5,
             standardHeaders: true,
             legacyHeaders: false,
+            
             handler: (req, res, next) => {
                 res.status(429).json({
                     success: false,

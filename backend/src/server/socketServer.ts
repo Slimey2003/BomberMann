@@ -1,4 +1,5 @@
 import { Server, Socket } from "socket.io";
+import { createAdapter } from "@socket.io/redis-adapter";
 import type { GameStateDto, RoomSetting } from "@project/utils";
 import RoomManager from "../bomberman/RoomManager";
 import http from "http";
@@ -73,11 +74,12 @@ export default class SocketServer {
 
         this.io = new Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>(server, {
             cors: {
-                origin: origins,
+                origin: "*",
                 methods: ["GET", "POST"],
                 credentials: true
             }
         });
+        this.io.adapter(createAdapter(this.roomManager.getPubClient(), this.roomManager.getSubClient()));
     }
 
     public start(): void {
@@ -101,12 +103,12 @@ export default class SocketServer {
                 next(new Error('Authentication error'));
                 return;
             }
-            console.log(decodedUser);
             socket.data.userId = decodedUser ? decodedUser["sub"] : undefined;
             socket.data.user = decodedUser;
+            console.log(socket.data.userId);
             next();
         } catch (error) {
-            console.log(error);
+            console.log("Fehler bei Auth:", error);
             return next(new Error('Authentication error'));
         }
     }
@@ -261,7 +263,6 @@ export default class SocketServer {
             const players = await this.roomManager.addPlayer(roomId, userId, playerName);
 
             this.joinSocketToRoom(socket, roomId);
-            this.subscribeToGameStateIfNeeded(roomId);
             this.io.to(roomId).emit("room_players", this.getPlayerListAsArray(players));
             callback(true, false);
         });
@@ -278,7 +279,6 @@ export default class SocketServer {
                 this.io.to(roomId).emit("closed_room");
                 return;
             }
-            this.unsubscribeFromGameStateIfNeeded(roomId);
             this.io.to(roomId).emit("room_players", playersList);
         });
         
@@ -386,7 +386,6 @@ export default class SocketServer {
         const sessionId = this.getUserId(socket);
         
         if (!roomId || !sessionId) return;
-        this.unsubscribeFromGameStateIfNeeded(roomId);
 
         const timeout = setTimeout(async () => {
             const players = await this.roomManager.removePlayer(roomId, sessionId);
@@ -409,28 +408,9 @@ export default class SocketServer {
                 const game: Game | undefined = this.roomManager.getGame(roomId);
                 if (game) {
                     const state: GameStateDto = game.render();
-                    this.roomManager.publishGameState(roomId, state);
+                    this.io.to(roomId).emit("game_tick", state);
                 }
             }
         }, 50);
     }
-
-    private subscribeToGameStateIfNeeded(roomId: string) {
-        const localSocketsInRoom = this.io.sockets.adapter.rooms.get(roomId)?.size || 0;
-
-        if (localSocketsInRoom === 1) {
-            this.roomManager.subscribeToGameState(roomId, (state) => {
-                this.io.to(roomId).emit("game_tick", state);
-            });
-        }
-    }
-
-    private unsubscribeFromGameStateIfNeeded(roomId: string) {
-        const localSocketsInRoom = this.io.sockets.adapter.rooms.get(roomId)?.size || 0;
-
-        if (localSocketsInRoom === 0) {
-            this.roomManager.unsubscribeFromGameState(roomId);
-        }
-    }
-
 }

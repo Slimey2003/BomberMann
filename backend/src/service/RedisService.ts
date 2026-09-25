@@ -7,8 +7,17 @@ export default class RedisService {
     private subClient: ReturnType<typeof createClient>;
 
     constructor() {
-        this.pubClient = createClient({url: "redis://localhost:6379"});
+        this.pubClient = createClient({url: "redis://redis:6379"});
         this.subClient = this.pubClient.duplicate();
+        this.connect();
+    }
+
+    public getPubClient() {
+        return this.pubClient;
+    }
+
+    public getSubClient() {
+        return this.subClient;
     }
 
     public async connect() {
@@ -142,24 +151,6 @@ export default class RedisService {
 
     public async unsubscribeFromInputsClear(roomId: string): Promise<void> {
         const channel = `room:${roomId}:input:clear`;
-        await this.subClient.unsubscribe(channel);
-    }
-
-    public async publishGameState(roomId: string, gameState: GameStateDto): Promise<void> {
-        const channel = `room:${roomId}:state`;
-        await this.pubClient.publish(channel, JSON.stringify(gameState));
-    }
-
-    public async subscribeToGameState(roomId: string, onStateReceived: (gameState: GameStateDto) => void): Promise<void> {
-        const channel = `room:${roomId}:state`;
-        await this.subClient.subscribe(channel, (m, _c) => {
-            const stateData = JSON.parse(m);
-            onStateReceived(stateData);
-        });
-    }
-
-    public async unsubscribeFromGameState(roomId: string): Promise<void> {
-        const channel = `room:${roomId}:state`;
         await this.subClient.unsubscribe(channel);
     }
 }
