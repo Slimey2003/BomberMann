@@ -68,9 +68,6 @@ export default class SocketServer {
         this.roomManager = roomManager;
         this.rateLimiter = new RateLimiter(10_000, 10, 60_000); //innerhalb von 10 Sek maximal 10 Anfragen, alle 60 Sek wird auf geräumt. 
         this.disconnectTimeouts = new Map();
-        const origins = process.env.FRONTEND_URL 
-            ? process.env.FRONTEND_URL.split(",") 
-            : ["http://127.0.0.1:5173", "http://localhost:5173"];
 
         this.io = new Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>(server, {
             cors: {
